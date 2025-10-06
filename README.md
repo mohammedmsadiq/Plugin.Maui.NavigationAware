@@ -1,54 +1,320 @@
-# Plugin.Maui.NavigationAware Template
+# Plugin.Maui.NavigationAware
 
-The `Plugin.Maui.NavigationAware` repository is a template repository that can be used to bootstrap your own .NET MAUI plugin project. You can use this project structure as a blueprint for your own work.
+[![NuGet](https://img.shields.io/nuget/v/Plugin.Maui.NavigationAware.svg)](https://www.nuget.org/packages/Plugin.Maui.NavigationAware/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-Learn how to get started with your plugin in this [YouTube video](https://www.youtube.com/watch?v=ZCQrlGT7MhI&list=PLfbOp004UaYVgzmTBNVI0ql2qF0LhSEU1&index=27).
+`Plugin.Maui.NavigationAware` provides navigation awareness for .NET MAUI applications, similar to Prism's INavigationAware interface. This plugin allows your pages to be notified when navigation events occur, enabling you to handle incoming and outgoing navigation with parameters.
 
-This template contains:
+## Features
 
-- A [sample .NET MAUI app](samples) where you can demonstrate how your plugin works and test your plugin with while developing
-- The [source](src) of the plugin
-- A boilerplate [README file](README_Feature.md) you can use (don't forget to rename to `README.md` and remove this one!)
-- [GitHub Actions for CI](.github/workflows) of the library and the sample app
-- [GitHub Action for releasing](.github/workflows) your package to NuGet
-- A [generic icon](nuget.png) for your project, feel free to adapt and be creative!
-- A [.editorconfig](.editorconfig) file to standardize the code syntax. Feel free to adapt or remove.
-- The [LICENSE](LICENSE) file with the MIT license. If you want this to be different, please change it. At the very least add your name in there!
+- ✅ **Navigation Awareness**: Receive notifications when navigating to or from a page
+- ✅ **Parameter Passing**: Pass and receive strongly-typed parameters during navigation
+- ✅ **Prism-like API**: Familiar interface for developers coming from Prism
+- ✅ **Easy Integration**: Simple base class or interface implementation
+- ✅ **Cross-platform**: Works on all .NET MAUI supported platforms (iOS, Android, macOS, Windows)
+- ✅ **Zero Dependencies**: No external dependencies beyond .NET MAUI
+
+## Installation
+
+Install the package via NuGet:
+
+```bash
+dotnet add package Plugin.Maui.NavigationAware
+```
+
+Or via the NuGet Package Manager:
+
+```
+Install-Package Plugin.Maui.NavigationAware
+```
 
 ## Getting Started
 
-1. Create your own GitHub repository from this one by clicking the "Use this template" button and then "Create a new repository". More information in the [documentation](https://docs.github.com/repositories/creating-and-managing-repositories/creating-a-repository-from-a-template). After that, clone the repo to your local machine.
+### Basic Usage
 
-2. Replace all occurrences of `Plugin.Maui.NavigationAware` with whatever your feature or functionality will be. For instance: `Plugin.Maui.ScreenBrightness` or `Plugin.Maui.Audio`. Of course the name can be anything, but to make it more discoverable it could be a great choice to stick to this naming scheme. You can easily do this with your favorite text-editor and do a replace all on all files.
+There are two ways to use this plugin:
 
-   2.1 Don't forget to also rename the files and folders on your filesystem.
+#### Option 1: Inherit from NavigationAwarePage
 
-3. In the csproj file of the plugin project (under `src`), make sure that you replace all relevant values to your project. This means the author of this project, the description of the project, the target framework (.NET 7, 8 or something else). If you don't want to or can't support a certain platform, remove that target platform altogether.
+The easiest way to use navigation awareness is to inherit from `NavigationAwarePage`:
 
-4. Delete this `README.md` file and rename `README_Feature.md` to `README.md`. Fill that README file with all the relevant details of your project.
+```csharp
+using Plugin.Maui.NavigationAware;
 
-5. Check the LICENSE file if this reflects the license that you want to distribute your project under. At the very least add your name there and the current year we live in.
+public partial class MyPage : NavigationAwarePage
+{
+    public MyPage()
+    {
+        InitializeComponent();
+    }
 
-6. Create a nice icon in the `nuget.png` file that will show up on nuget.org and in the NuGet manager in Visual Studio.
+    public override void OnNavigatedTo(INavigationParameters parameters)
+    {
+        base.OnNavigatedTo(parameters);
+        // Handle incoming navigation
+        
+        // Access parameters
+        if (parameters.TryGetValue<string>("message", out var message))
+        {
+            // Use the message
+            Console.WriteLine($"Received: {message}");
+        }
+    }
 
-7. Write your plugin code (under `src`) and add samples to the .NET MAUI sample app (under `samples` folder)
+    public override void OnNavigatedFrom(INavigationParameters parameters)
+    {
+        base.OnNavigatedFrom(parameters);
+        // Handle outgoing navigation
+    }
+}
+```
 
-8. Make super sure that your package won't show up as `Plugin.Maui.NavigationAware` on NuGet! If one does, you owe me a drink!
+**XAML File:**
 
-9. Publish your package to NuGet, a nice guide to do that can be found [here](https://learn.microsoft.com/nuget/nuget-org/publish-a-package). Also see [Publish to NuGet](#publish-to-nuget) below.
+```xml
+<?xml version="1.0" encoding="utf-8" ?>
+<local:NavigationAwarePage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:local="clr-namespace:Plugin.Maui.NavigationAware;assembly=Plugin.Maui.NavigationAware"
+             x:Class="YourNamespace.MyPage"
+             Title="My Page">
+    <!-- Your content here -->
+</local:NavigationAwarePage>
+```
 
-10. Enjoy life as a .NET MAUI plugin author! ✨
+#### Option 2: Implement INavigationAware
 
-As an example of all of this you can have a look at:
+Alternatively, you can implement the `INavigationAware` interface on any `ContentPage`:
 
-- [Plugin.Maui.Audio](https://github.com/jfversluis/Plugin.Maui.Audio)
-- [Plugin.Maui.Pedometer](https://github.com/jfversluis/Plugin.Maui.Pedometer)
-- [Plugin.Maui.ScreenBrightness](https://github.com/jfversluis/Plugin.Maui.ScreenBrightness)
+```csharp
+using Plugin.Maui.NavigationAware;
 
-## Publish to NuGet
+public partial class MyPage : ContentPage, INavigationAware
+{
+    public MyPage()
+    {
+        InitializeComponent();
+    }
 
-If you want to publish your package to NuGet, you totally can! Included in this template are a couple of GitHub Actions. One of them goes of when you create a new tag with this pattern: `v1.0.0` or `v1.0.0-preview1`. Obviously the `1.0.0` part can be determined by you as you see fit, as long as you follow the pattern of 3 integers separated by dots.
+    public void OnNavigatedTo(INavigationParameters parameters)
+    {
+        // Handle incoming navigation
+    }
 
-You will also want to set a secret for this repository which contains your NuGet API key. Follow the documentation on that [here](https://docs.github.com/actions/security-guides/encrypted-secrets#creating-encrypted-secrets-for-a-repository), and add a secret with the key `NUGET_API_KEY` and value of your NuGet API key. The API key should be authorized to push a NuGet package with the given identifier. 
+    public void OnNavigatedFrom(INavigationParameters parameters)
+    {
+        // Handle outgoing navigation
+    }
+}
+```
 
-From there, after [creating a GitHub release](https://docs.github.com/repositories/releasing-projects-on-github/managing-releases-in-a-repository) your plugin will be automatically released on NuGet!
+### Navigation with Parameters
+
+Use the `NavigationService` to navigate with parameters:
+
+```csharp
+private async void OnNavigateClicked(object sender, EventArgs e)
+{
+    // Get the navigation service from the current page
+    var navigationService = this.GetNavigationService();
+    
+    // Create navigation parameters
+    var parameters = new NavigationParameters
+    {
+        { "userId", 123 },
+        { "message", "Hello from previous page!" },
+        { "timestamp", DateTime.Now }
+    };
+    
+    // Navigate to the next page
+    await navigationService.NavigateToAsync(new DetailsPage(), parameters);
+}
+```
+
+### Receiving Parameters
+
+On the destination page, access the parameters in the `OnNavigatedTo` method:
+
+```csharp
+public override void OnNavigatedTo(INavigationParameters parameters)
+{
+    base.OnNavigatedTo(parameters);
+    
+    // Access strongly-typed parameters
+    if (parameters.TryGetValue<int>("userId", out var userId))
+    {
+        LoadUserData(userId);
+    }
+    
+    if (parameters.TryGetValue<string>("message", out var message))
+    {
+        DisplayMessage(message);
+    }
+    
+    // Or use GetValue with default
+    var timestamp = parameters.GetValue<DateTime>("timestamp");
+}
+```
+
+### Going Back with Parameters
+
+You can also pass parameters when navigating back:
+
+```csharp
+private async void OnGoBackClicked(object sender, EventArgs e)
+{
+    var navigationService = this.GetNavigationService();
+    
+    var parameters = new NavigationParameters
+    {
+        { "result", "Success" },
+        { "data", someData }
+    };
+    
+    await navigationService.GoBackAsync(parameters);
+}
+```
+
+## API Reference
+
+### Core Interfaces
+
+#### INavigationAware
+
+Interface for pages that need to be notified of navigation events.
+
+```csharp
+public interface INavigationAware
+{
+    void OnNavigatedTo(INavigationParameters parameters);
+    void OnNavigatedFrom(INavigationParameters parameters);
+}
+```
+
+#### INavigationParameters
+
+Represents navigation parameters passed during navigation.
+
+```csharp
+public interface INavigationParameters : IDictionary<string, object>
+{
+    T? GetValue<T>(string key);
+    bool TryGetValue<T>(string key, out T? value);
+}
+```
+
+#### INavigationService
+
+Service for performing navigation operations.
+
+```csharp
+public interface INavigationService
+{
+    Task NavigateToAsync(Page page, INavigationParameters? parameters = null);
+    Task GoBackAsync(INavigationParameters? parameters = null);
+}
+```
+
+### Base Classes
+
+#### NavigationAwarePage
+
+Base `ContentPage` implementation with navigation awareness built-in.
+
+```csharp
+public abstract class NavigationAwarePage : ContentPage, INavigationAware
+{
+    public virtual void OnNavigatedTo(INavigationParameters parameters);
+    public virtual void OnNavigatedFrom(INavigationParameters parameters);
+}
+```
+
+### Extension Methods
+
+#### NavigationExtensions
+
+```csharp
+public static class NavigationExtensions
+{
+    // Get navigation service from a page
+    public static INavigationService GetNavigationService(this Page page);
+    
+    // Register navigation service with DI (optional)
+    public static IServiceCollection AddNavigationAware(this IServiceCollection services);
+}
+```
+
+## Advanced Usage
+
+### Dependency Injection
+
+You can optionally register the navigation service with the DI container:
+
+```csharp
+public static class MauiProgram
+{
+    public static MauiApp CreateMauiApp()
+    {
+        var builder = MauiApp.CreateBuilder();
+        builder
+            .UseMauiApp<App>();
+
+        // Register navigation service
+        builder.Services.AddNavigationAware();
+        
+        // Register your pages
+        builder.Services.AddTransient<MainPage>();
+        builder.Services.AddTransient<DetailsPage>();
+
+        return builder.Build();
+    }
+}
+```
+
+Then inject it into your pages:
+
+```csharp
+public partial class MyPage : NavigationAwarePage
+{
+    private readonly INavigationService _navigationService;
+
+    public MyPage(INavigationService navigationService)
+    {
+        InitializeComponent();
+        _navigationService = navigationService;
+    }
+}
+```
+
+## Sample Application
+
+The repository includes a sample application demonstrating all features of the plugin. Check out the [samples folder](samples/) to see it in action.
+
+## Comparison with Prism
+
+If you're familiar with Prism, this plugin provides similar functionality:
+
+| Prism | Plugin.Maui.NavigationAware |
+|-------|----------------------------|
+| `INavigationAware` | `INavigationAware` |
+| `INavigationParameters` | `INavigationParameters` |
+| `NavigationParameters` | `NavigationParameters` |
+| `OnNavigatedTo()` | `OnNavigatedTo()` |
+| `OnNavigatedFrom()` | `OnNavigatedFrom()` |
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Acknowledgments
+
+- Inspired by [Prism Library](https://prismlibrary.com/) for Xamarin.Forms and .NET MAUI
+- Built with ❤️ for the .NET MAUI community
+
+## Support
+
+If you encounter any issues or have questions, please [open an issue](https://github.com/mohammedmsadiq/Plugin.Maui.NavigationAware/issues) on GitHub.

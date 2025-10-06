@@ -2,25 +2,25 @@
 <local:NavigationAwarePage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:local="clr-namespace:Plugin.Maui.NavigationAware;assembly=Plugin.Maui.NavigationAware"
-             x:Class="Plugin.Maui.NavigationAware.Sample.MainPage"
-             Title="Navigation Aware Plugin">
+             x:Class="Plugin.Maui.NavigationAware.Sample.SecondPage"
+             Title="Second Page">
 
     <VerticalStackLayout Padding="30" Spacing="25">
         <Label 
-            Text="Welcome to NavigationAware Plugin!"
+            Text="Second Page"
             FontSize="24"
             FontAttributes="Bold"
             HorizontalOptions="Center" />
         
         <Label 
-            Text="This sample demonstrates navigation awareness similar to Prism."
+            Text="This page receives navigation parameters from the MainPage."
             FontSize="16"
             HorizontalOptions="Center" />
         
         <Button 
-            x:Name="NavigateButton"
-            Text="Navigate to Second Page"
-            Clicked="OnNavigateClicked"
+            x:Name="GoBackButton"
+            Text="Go Back"
+            Clicked="OnGoBackClicked"
             HorizontalOptions="Center" />
         
         <Label 

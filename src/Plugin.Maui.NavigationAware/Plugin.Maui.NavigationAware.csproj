@@ -17,19 +17,19 @@
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'tizen'">6.5</SupportedOSPlatformVersion>
 
 		<!-- NuGet -->
-		<Authors>author</Authors>
+		<Authors>Mohammed Sadiq</Authors>
 		<Copyright>Copyright © author and contributors</Copyright>
 		<IsPackable>True</IsPackable>
-		<PackageProjectUrl>https://github.com/jfversluis/Plugin.Maui.NavigationAware</PackageProjectUrl>
-		<RepositoryUrl>https://github.com/jfversluis/Plugin.Maui.NavigationAware</RepositoryUrl>
+		<PackageProjectUrl>https://github.com/mohammedmsadiq/Plugin.Maui.NavigationAware</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/mohammedmsadiq/Plugin.Maui.NavigationAware</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
-		<PackageTags>dotnet-maui;maui;plugin;</PackageTags>
+		<PackageTags>dotnet-maui;maui;plugin;navigation;prism;navigationaware;lifecycle</PackageTags>
 		<IncludeSymbols>True</IncludeSymbols>
 		<PublishRepositoryUrl>true</PublishRepositoryUrl>
 		<EmbedUntrackedSources>true</EmbedUntrackedSources>
 		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
-		<Title>.NET MAUI Feature Plugin</Title>
-		<Description>Plugin.Maui.NavigationAware provides the ability to do this amazing thing in your .NET MAUI application.</Description>
+		<Title>Plugin.Maui.NavigationAware - Navigation Awareness for .NET MAUI</Title>
+		<Description>Plugin.Maui.NavigationAware provides navigation awareness for .NET MAUI applications, similar to Prism's INavigationAware. Receive notifications when pages are navigated to or from, and pass strongly-typed parameters between pages easily. Perfect for MVVM and clean architecture patterns.</Description>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
 		<DebugType>portable</DebugType>

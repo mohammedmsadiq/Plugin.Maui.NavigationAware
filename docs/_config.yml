@@ -1,0 +1,5 @@
+theme: jekyll-theme-cayman
+title: Plugin.Maui.NavigationAware
+description: Navigation Awareness for .NET MAUI - Prism-like Navigation Made Simple
+show_downloads: true
+google_analytics:

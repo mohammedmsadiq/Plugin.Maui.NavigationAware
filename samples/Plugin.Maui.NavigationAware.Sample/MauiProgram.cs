@@ -20,6 +20,10 @@ public static class MauiProgram
 		builder.Services.AddTransient<MainPage>();
 		builder.Services.AddTransient<SecondPage>();
 		
+		// Register pages for string-based navigation
+		builder.Services.RegisterPage<MainPage>();
+		builder.Services.RegisterPage<SecondPage>();
+		
 		// Register navigation service (optional - can also use extension method)
 		// builder.Services.AddNavigationAware();
 

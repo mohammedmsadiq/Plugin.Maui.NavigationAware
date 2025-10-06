@@ -9,6 +9,8 @@
 
 - ✅ **Navigation Awareness**: Receive notifications when navigating to or from a page
 - ✅ **Parameter Passing**: Pass and receive strongly-typed parameters during navigation
+- ✅ **String-Based Navigation**: Navigate using page names/keys like Prism (e.g., `NavigateToAsync("PageName")`)
+- ✅ **Instance-Based Navigation**: Navigate using page instances (e.g., `NavigateToAsync(new MyPage())`)
 - ✅ **Prism-like API**: Familiar interface for developers coming from Prism
 - ✅ **Easy Integration**: Simple base class or interface implementation
 - ✅ **Cross-platform**: Works on all .NET MAUI supported platforms (iOS, Android, macOS, Windows)
@@ -126,9 +128,44 @@ private async void OnNavigateClicked(object sender, EventArgs e)
         { "timestamp", DateTime.Now }
     };
     
-    // Navigate to the next page
+    // Option 1: Navigate using page instance
     await navigationService.NavigateToAsync(new DetailsPage(), parameters);
+    
+    // Option 2: Navigate using string (requires page registration - see below)
+    await navigationService.NavigateToAsync("DetailsPage", parameters);
+    // or using nameof for type safety:
+    await navigationService.NavigateToAsync(nameof(DetailsPage), parameters);
 }
+```
+
+### String-Based Navigation (Optional)
+
+For developers migrating from Prism or preferring string-based navigation, you can register pages in your `MauiProgram.cs`:
+
+```csharp
+public static class MauiProgram
+{
+    public static MauiApp CreateMauiApp()
+    {
+        var builder = MauiApp.CreateBuilder();
+        builder.UseMauiApp<App>();
+
+        // Register pages for string-based navigation
+        builder.Services.RegisterPage<MainPage>();
+        builder.Services.RegisterPage<DetailsPage>();
+        
+        // You can also use custom keys:
+        builder.Services.RegisterPage<DetailsPage>("CustomDetailsKey");
+
+        return builder.Build();
+    }
+}
+```
+
+Now you can navigate using strings:
+```csharp
+await navigationService.NavigateToAsync("DetailsPage", parameters);
+await navigationService.NavigateToAsync(nameof(DetailsPage), parameters);
 ```
 
 ### Receiving Parameters
@@ -211,6 +248,7 @@ Service for performing navigation operations.
 public interface INavigationService
 {
     Task NavigateToAsync(Page page, INavigationParameters? parameters = null);
+    Task NavigateToAsync(string pageKey, INavigationParameters? parameters = null);
     Task GoBackAsync(INavigationParameters? parameters = null);
 }
 ```
@@ -241,6 +279,10 @@ public static class NavigationExtensions
     
     // Register navigation service with DI (optional)
     public static IServiceCollection AddNavigationAware(this IServiceCollection services);
+    
+    // Register a page type for string-based navigation
+    public static IServiceCollection RegisterPage<TPage>(this IServiceCollection services, string? key = null) 
+        where TPage : Page;
 }
 ```
 

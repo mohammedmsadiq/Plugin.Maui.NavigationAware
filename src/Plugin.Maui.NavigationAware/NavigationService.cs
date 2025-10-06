@@ -43,6 +43,16 @@ public class NavigationService : INavigationService
     }
 
     /// <inheritdoc/>
+    public async Task NavigateToAsync(string pageKey, INavigationParameters? parameters = null)
+    {
+        if (string.IsNullOrWhiteSpace(pageKey))
+            throw new ArgumentException("Page key cannot be null or empty", nameof(pageKey));
+
+        var page = PageRegistry.CreatePage(pageKey);
+        await NavigateToAsync(page, parameters);
+    }
+
+    /// <inheritdoc/>
     public async Task GoBackAsync(INavigationParameters? parameters = null)
     {
         if (_navigation.NavigationStack.Count > 0)

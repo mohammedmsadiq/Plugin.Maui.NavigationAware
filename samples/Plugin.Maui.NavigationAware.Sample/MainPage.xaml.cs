@@ -38,7 +38,11 @@ public partial class MainPage : NavigationAwarePage
 			{ "timestamp", DateTime.Now }
 		};
 		
-		await navigationService.NavigateToAsync(new SecondPage(), parameters);
+		// Option 1: Navigate using page instance (original approach)
+		// await navigationService.NavigateToAsync(new SecondPage(), parameters);
+		
+		// Option 2: Navigate using string-based navigation (new approach)
+		await navigationService.NavigateToAsync("SecondPage", parameters);
 	}
 }
 

@@ -125,15 +125,16 @@ Service for performing navigation operations.
 public interface INavigationService
 {
     Task NavigateToAsync(Page page, INavigationParameters? parameters = null);
+    Task NavigateToAsync(string pageKey, INavigationParameters? parameters = null);
     Task GoBackAsync(INavigationParameters? parameters = null);
 }
 ```
 
 #### Methods
 
-##### NavigateToAsync
+##### NavigateToAsync(Page, INavigationParameters?)
 
-Navigate to a page.
+Navigate to a page using a page instance.
 
 ```csharp
 Task NavigateToAsync(Page page, INavigationParameters? parameters = null)
@@ -151,6 +152,45 @@ Task representing the navigation operation.
 var navigationService = this.GetNavigationService();
 await navigationService.NavigateToAsync(
     new DetailsPage(), 
+    new NavigationParameters { { "id", 123 } }
+);
+```
+
+##### NavigateToAsync(string, INavigationParameters?)
+
+Navigate to a page using its registered key.
+
+```csharp
+Task NavigateToAsync(string pageKey, INavigationParameters? parameters = null)
+```
+
+**Parameters:**
+- `pageKey` (string): The key of the page to navigate to
+- `parameters` (INavigationParameters, optional): Navigation parameters
+
+**Returns:**
+Task representing the navigation operation.
+
+**Exceptions:**
+- ArgumentException: Thrown when pageKey is null or empty
+- InvalidOperationException: Thrown when the page key is not registered
+
+**Remarks:**
+Pages must be registered using `PageRegistry.Register<TPage>()` or `services.RegisterPage<TPage>()` before using string-based navigation.
+
+**Example:**
+```csharp
+var navigationService = this.GetNavigationService();
+
+// Using page name
+await navigationService.NavigateToAsync(
+    "DetailsPage",
+    new NavigationParameters { { "id", 123 } }
+);
+
+// Using nameof for type safety
+await navigationService.NavigateToAsync(
+    nameof(DetailsPage),
     new NavigationParameters { { "id", 123 } }
 );
 ```
@@ -349,6 +389,7 @@ public class NavigationService : INavigationService
 {
     public NavigationService(INavigation navigation);
     public Task NavigateToAsync(Page page, INavigationParameters? parameters = null);
+    public Task NavigateToAsync(string pageKey, INavigationParameters? parameters = null);
     public Task GoBackAsync(INavigationParameters? parameters = null);
 }
 ```
@@ -371,6 +412,123 @@ Usually you don't create this directly. Use the `GetNavigationService()` extensi
 
 ---
 
+### PageRegistry
+
+Static registry for page types to enable string-based navigation.
+
+```csharp
+public static class PageRegistry
+{
+    public static void SetServiceProvider(IServiceProvider serviceProvider);
+    public static void Register<TPage>(string? key = null) where TPage : Page;
+    public static void Register(Type pageType, string? key = null);
+    public static Page CreatePage(string key);
+    public static bool IsRegistered(string key);
+    public static void Clear();
+}
+```
+
+#### Methods
+
+##### SetServiceProvider
+
+Sets the service provider for page resolution.
+
+```csharp
+public static void SetServiceProvider(IServiceProvider serviceProvider)
+```
+
+**Parameters:**
+- `serviceProvider` (IServiceProvider): The service provider to use for resolving pages
+
+**Remarks:**
+This is automatically called by `AddNavigationAware()`. You usually don't need to call this directly.
+
+##### Register&lt;TPage&gt;
+
+Registers a page type with an optional key.
+
+```csharp
+public static void Register<TPage>(string? key = null) where TPage : Page
+```
+
+**Type Parameters:**
+- `TPage`: The page type to register
+
+**Parameters:**
+- `key` (string, optional): The key to register the page with. If null, uses the type name.
+
+**Example:**
+```csharp
+// Register with type name as key
+PageRegistry.Register<MainPage>();
+
+// Register with custom key
+PageRegistry.Register<DetailsPage>("ProductDetails");
+```
+
+##### Register(Type, string?)
+
+Registers a page type with an optional key (non-generic version).
+
+```csharp
+public static void Register(Type pageType, string? key = null)
+```
+
+**Parameters:**
+- `pageType` (Type): The page type to register. Must inherit from Page.
+- `key` (string, optional): The key to register the page with. If null, uses the type name.
+
+**Exceptions:**
+- ArgumentException: Thrown when pageType does not inherit from Page
+
+##### CreatePage
+
+Creates an instance of a page from its registered key.
+
+```csharp
+public static Page CreatePage(string key)
+```
+
+**Parameters:**
+- `key` (string): The key of the page to create
+
+**Returns:**
+A new instance of the page.
+
+**Exceptions:**
+- InvalidOperationException: Thrown when the page key is not registered or page cannot be instantiated
+
+**Remarks:**
+Attempts to resolve the page using the service provider first. If that fails, uses Activator.CreateInstance.
+
+##### IsRegistered
+
+Checks if a page key is registered.
+
+```csharp
+public static bool IsRegistered(string key)
+```
+
+**Parameters:**
+- `key` (string): The key to check
+
+**Returns:**
+True if the key is registered, false otherwise.
+
+##### Clear
+
+Clears all registered pages.
+
+```csharp
+public static void Clear()
+```
+
+**Remarks:**
+This is mainly useful for testing scenarios.
+
+---
+
 ## Extension Methods
 
 ### NavigationExtensions
@@ -381,6 +539,7 @@ Extension methods for navigation awareness.
 public static class NavigationExtensions
 {
     public static IServiceCollection AddNavigationAware(this IServiceCollection services);
+    public static IServiceCollection RegisterPage<TPage>(this IServiceCollection services, string? key = null) where TPage : Page;
     public static INavigationService GetNavigationService(this Page page);
 }
 ```
@@ -401,12 +560,50 @@ public static IServiceCollection AddNavigationAware(this IServiceCollection serv
 **Returns:**
 The service collection for chaining.
 
+**Remarks:**
+This also sets the service provider on PageRegistry for DI-based page resolution.
+
 **Example:**
 ```csharp
 public static MauiApp CreateMauiApp()
 {
     var builder = MauiApp.CreateBuilder();
     builder.Services.AddNavigationAware();
+    return builder.Build();
+}
+```
+
+##### RegisterPage&lt;TPage&gt;
+
+Registers a page type for string-based navigation.
+
+```csharp
+public static IServiceCollection RegisterPage<TPage>(this IServiceCollection services, string? key = null) where TPage : Page
+```
+
+**Type Parameters:**
+- `TPage`: The page type to register
+
+**Parameters:**
+- `services` (IServiceCollection): The service collection
+- `key` (string, optional): The key to register the page with. If null, uses the type name.
+
+**Returns:**
+The service collection for chaining.
+
+**Example:**
+```csharp
+public static MauiApp CreateMauiApp()
+{
+    var builder = MauiApp.CreateBuilder();
+    
+    // Register pages for string-based navigation
+    builder.Services.RegisterPage<MainPage>();
+    builder.Services.RegisterPage<DetailsPage>();
+    
+    // Register with custom key
+    builder.Services.RegisterPage<DetailsPage>("ProductDetails");
+    
     return builder.Build();
 }
 ```

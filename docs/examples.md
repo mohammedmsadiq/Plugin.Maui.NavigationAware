@@ -5,12 +5,13 @@ This page provides practical examples of using Plugin.Maui.NavigationAware in va
 ## Table of Contents
 
 1. [Basic Navigation](#basic-navigation)
-2. [Passing Multiple Parameters](#passing-multiple-parameters)
-3. [Complex Object Parameters](#complex-object-parameters)
-4. [Navigation with Return Values](#navigation-with-return-values)
-5. [Master-Detail Navigation](#master-detail-navigation)
-6. [Modal Navigation](#modal-navigation)
-7. [Dependency Injection](#dependency-injection)
+2. [String-Based Navigation](#string-based-navigation)
+3. [Passing Multiple Parameters](#passing-multiple-parameters)
+4. [Complex Object Parameters](#complex-object-parameters)
+5. [Navigation with Return Values](#navigation-with-return-values)
+6. [Master-Detail Navigation](#master-detail-navigation)
+7. [Modal Navigation](#modal-navigation)
+8. [Dependency Injection](#dependency-injection)
 
 ---
 
@@ -70,6 +71,106 @@ public partial class SecondPage : NavigationAwarePage
     {
         var navigationService = this.GetNavigationService();
         await navigationService.GoBackAsync();
+    }
+}
+```
+
+---
+
+## String-Based Navigation
+
+Navigate using page names/keys instead of instances, similar to Prism.
+
+### MauiProgram.cs
+
+First, register your pages:
+
+```csharp
+using Plugin.Maui.NavigationAware;
+
+namespace MyApp;
+
+public static class MauiProgram
+{
+    public static MauiApp CreateMauiApp()
+    {
+        var builder = MauiApp.CreateBuilder();
+        builder
+            .UseMauiApp<App>();
+
+        // Register pages for string-based navigation
+        builder.Services.RegisterPage<MainPage>();
+        builder.Services.RegisterPage<DetailsPage>();
+        builder.Services.RegisterPage<SettingsPage>();
+        
+        // You can also register with custom keys
+        builder.Services.RegisterPage<DetailsPage>("ProductDetails");
+
+        return builder.Build();
+    }
+}
+```
+
+### MainPage.xaml.cs
+
+```csharp
+using Plugin.Maui.NavigationAware;
+
+namespace MyApp;
+
+public partial class MainPage : NavigationAwarePage
+{
+    public MainPage()
+    {
+        InitializeComponent();
+    }
+
+    private async void OnNavigateClicked(object sender, EventArgs e)
+    {
+        var navigationService = this.GetNavigationService();
+        
+        // Navigate using page name
+        await navigationService.NavigateToAsync("DetailsPage");
+        
+        // Or use nameof for type safety
+        await navigationService.NavigateToAsync(nameof(DetailsPage));
+        
+        // Or use custom key
+        await navigationService.NavigateToAsync("ProductDetails");
+    }
+
+    private async void OnNavigateWithParametersClicked(object sender, EventArgs e)
+    {
+        var navigationService = this.GetNavigationService();
+        var parameters = new NavigationParameters
+        {
+            { "userId", 123 },
+            { "userName", "John Doe" }
+        };
+        
+        await navigationService.NavigateToAsync(nameof(DetailsPage), parameters);
+    }
+}
+```
+
+### DetailsPage.xaml.cs
+
+```csharp
+using Plugin.Maui.NavigationAware;
+
+namespace MyApp;
+
+public partial class DetailsPage : NavigationAwarePage
+{
+    public override void OnNavigatedTo(INavigationParameters parameters)
+    {
+        base.OnNavigatedTo(parameters);
+        
+        if (parameters.TryGetValue<int>("userId", out var userId))
+        {
+            var userName = parameters.GetValue<string>("userName");
+            StatusLabel.Text = $"User: {userName} (ID: {userId})";
+        }
     }
 }
 ```

@@ -13,6 +13,9 @@ This page provides practical examples of using Plugin.Maui.NavigationAware in va
 7. [Modal Navigation](#modal-navigation)
 8. [Dependency Injection](#dependency-injection)
 9. [ViewModel Locator](#viewmodel-locator)
+10. [URI-Based Navigation](#uri-based-navigation)
+11. [Navigate Back To Specific Page](#navigate-back-to-specific-page)
+12. [Navigate Back To Root](#navigate-back-to-root)
 
 ---
 
@@ -971,6 +974,235 @@ public partial class DetailsPage : NavigationAwarePage
             if (parameters.TryGetValue<string>("title", out var title))
             {
                 viewModel.Title = title;
+            }
+        }
+    }
+}
+```
+
+---
+
+## URI-Based Navigation
+
+Navigate to pages using a URI path, similar to Prism's navigation syntax.
+
+### MauiProgram.cs
+
+First, register your pages:
+
+```csharp
+public static class MauiProgram
+{
+    public static MauiApp CreateMauiApp()
+    {
+        var builder = MauiApp.CreateBuilder();
+        builder.UseMauiApp<App>();
+
+        // Register pages
+        builder.Services.RegisterPage<NavigationPage>();
+        builder.Services.RegisterPage<MasterTabbedPage>();
+        builder.Services.RegisterPage<DetailPage>();
+
+        return builder.Build();
+    }
+}
+```
+
+### MainPage.xaml.cs
+
+Use URI-based navigation:
+
+```csharp
+using Plugin.Maui.NavigationAware;
+
+namespace MyApp;
+
+public partial class MainPage : NavigationAwarePage
+{
+    public MainPage()
+    {
+        InitializeComponent();
+    }
+
+    private async void OnNavigateToDetailsClicked(object sender, EventArgs e)
+    {
+        var navigationService = this.GetNavigationService();
+        
+        // Navigate using URI path
+        await navigationService.NavigateAsync("/NavigationPage/MasterTabbedPage");
+    }
+
+    private async void OnNavigateWithParametersClicked(object sender, EventArgs e)
+    {
+        var navigationService = this.GetNavigationService();
+        var parameters = new NavigationParameters
+        {
+            { "userId", 123 },
+            { "mode", "edit" }
+        };
+        
+        await navigationService.NavigateAsync("/NavigationPage/DetailPage", parameters);
+    }
+}
+```
+
+**Note:** The URI path is parsed and each segment is treated as a page key. Pages are navigated to in sequence.
+
+---
+
+## Navigate Back To Specific Page
+
+Navigate back to a specific page in the navigation stack.
+
+### Example Scenario
+
+You have a navigation stack like: MainPage -> SettingsPage -> ProfilePage -> DetailPage
+
+You want to navigate back to SettingsPage from DetailPage, skipping ProfilePage.
+
+### DetailPage.xaml.cs
+
+```csharp
+using Plugin.Maui.NavigationAware;
+
+namespace MyApp;
+
+public partial class DetailPage : NavigationAwarePage
+{
+    public DetailPage()
+    {
+        InitializeComponent();
+    }
+
+    private async void OnBackToSettingsClicked(object sender, EventArgs e)
+    {
+        var navigationService = this.GetNavigationService();
+        
+        // Navigate back to SettingsPage, removing all pages in between
+        await navigationService.GoBackToAsync("SettingsPage");
+    }
+
+    private async void OnBackToSettingsWithDataClicked(object sender, EventArgs e)
+    {
+        var navigationService = this.GetNavigationService();
+        var parameters = new NavigationParameters
+        {
+            { "result", "updated" },
+            { "timestamp", DateTime.Now }
+        };
+        
+        await navigationService.GoBackToAsync("SettingsPage", parameters);
+    }
+}
+```
+
+### SettingsPage.xaml.cs
+
+Receive the parameters when navigated back to:
+
+```csharp
+using Plugin.Maui.NavigationAware;
+
+namespace MyApp;
+
+public partial class SettingsPage : NavigationAwarePage
+{
+    public SettingsPage()
+    {
+        InitializeComponent();
+    }
+
+    public override void OnNavigatedTo(INavigationParameters parameters)
+    {
+        base.OnNavigatedTo(parameters);
+        
+        // Handle return from detail page
+        if (parameters.TryGetValue<string>("result", out var result))
+        {
+            if (result == "updated")
+            {
+                StatusLabel.Text = "Settings were updated";
+                RefreshSettings();
+            }
+        }
+    }
+
+    private void RefreshSettings()
+    {
+        // Refresh settings UI
+    }
+}
+```
+
+---
+
+## Navigate Back To Root
+
+Navigate back to the root page of the navigation stack.
+
+### DeepNestedPage.xaml.cs
+
+```csharp
+using Plugin.Maui.NavigationAware;
+
+namespace MyApp;
+
+public partial class DeepNestedPage : NavigationAwarePage
+{
+    public DeepNestedPage()
+    {
+        InitializeComponent();
+    }
+
+    private async void OnBackToRootClicked(object sender, EventArgs e)
+    {
+        var navigationService = this.GetNavigationService();
+        
+        // Navigate back to the root page (usually MainPage)
+        await navigationService.GoBackToRootAsync();
+    }
+
+    private async void OnBackToRootWithResultClicked(object sender, EventArgs e)
+    {
+        var navigationService = this.GetNavigationService();
+        var parameters = new NavigationParameters
+        {
+            { "taskCompleted", true },
+            { "result", "success" }
+        };
+        
+        await navigationService.GoBackToRootAsync(parameters);
+    }
+}
+```
+
+### MainPage.xaml.cs (Root Page)
+
+Handle the parameters when returning to root:
+
+```csharp
+using Plugin.Maui.NavigationAware;
+
+namespace MyApp;
+
+public partial class MainPage : NavigationAwarePage
+{
+    public MainPage()
+    {
+        InitializeComponent();
+    }
+
+    public override void OnNavigatedTo(INavigationParameters parameters)
+    {
+        base.OnNavigatedTo(parameters);
+        
+        // Handle return to root
+        if (parameters.TryGetValue<bool>("taskCompleted", out var taskCompleted))
+        {
+            if (taskCompleted)
+            {
+                var result = parameters.GetValue<string>("result");
+                StatusLabel.Text = $"Task completed: {result}";
             }
         }
     }

@@ -127,6 +127,9 @@ public interface INavigationService
     Task NavigateToAsync(Page page, INavigationParameters? parameters = null);
     Task NavigateToAsync(string pageKey, INavigationParameters? parameters = null);
     Task GoBackAsync(INavigationParameters? parameters = null);
+    Task NavigateAsync(string uri, INavigationParameters? parameters = null);
+    Task GoBackToAsync(string pageKey, INavigationParameters? parameters = null);
+    Task GoBackToRootAsync(INavigationParameters? parameters = null);
 }
 ```
 
@@ -215,6 +218,85 @@ var navigationService = this.GetNavigationService();
 await navigationService.GoBackAsync(
     new NavigationParameters { { "result", "success" } }
 );
+```
+
+##### NavigateAsync
+
+Navigate to a page using a URI path.
+
+```csharp
+Task NavigateAsync(string uri, INavigationParameters? parameters = null)
+```
+
+**Parameters:**
+- `uri` (string): The URI path representing the navigation hierarchy (e.g., "/NavigationPage/DetailPage")
+- `parameters` (INavigationParameters, optional): Navigation parameters
+
+**Returns:**
+Task representing the navigation operation.
+
+**Exceptions:**
+- ArgumentException: Thrown when uri is null or empty
+- InvalidOperationException: Thrown when a page in the URI is not registered
+
+**Remarks:**
+The URI is parsed and each segment is treated as a page key. Pages are navigated to in sequence.
+
+**Example:**
+```csharp
+var navigationService = this.GetNavigationService();
+await navigationService.NavigateAsync("/NavigationPage/MasterTabbedPage");
+```
+
+##### GoBackToAsync
+
+Navigate back to a specific page in the navigation stack.
+
+```csharp
+Task GoBackToAsync(string pageKey, INavigationParameters? parameters = null)
+```
+
+**Parameters:**
+- `pageKey` (string): The key of the page to navigate back to
+- `parameters` (INavigationParameters, optional): Navigation parameters
+
+**Returns:**
+Task representing the navigation operation.
+
+**Exceptions:**
+- ArgumentException: Thrown when pageKey is null or empty
+- InvalidOperationException: Thrown when the page is not found in the navigation stack
+
+**Remarks:**
+Pops all pages from the navigation stack until the specified page is reached.
+
+**Example:**
+```csharp
+var navigationService = this.GetNavigationService();
+await navigationService.GoBackToAsync("MainPage");
+```
+
+##### GoBackToRootAsync
+
+Navigate back to the root page.
+
+```csharp
+Task GoBackToRootAsync(INavigationParameters? parameters = null)
+```
+
+**Parameters:**
+- `parameters` (INavigationParameters, optional): Navigation parameters
+
+**Returns:**
+Task representing the navigation operation.
+
+**Remarks:**
+Pops all pages from the navigation stack, returning to the root page.
+
+**Example:**
+```csharp
+var navigationService = this.GetNavigationService();
+await navigationService.GoBackToRootAsync();
 ```
 
 ---
@@ -391,6 +473,9 @@ public class NavigationService : INavigationService
     public Task NavigateToAsync(Page page, INavigationParameters? parameters = null);
     public Task NavigateToAsync(string pageKey, INavigationParameters? parameters = null);
     public Task GoBackAsync(INavigationParameters? parameters = null);
+    public Task NavigateAsync(string uri, INavigationParameters? parameters = null);
+    public Task GoBackToAsync(string pageKey, INavigationParameters? parameters = null);
+    public Task GoBackToRootAsync(INavigationParameters? parameters = null);
 }
 ```
 
@@ -424,6 +509,7 @@ public static class PageRegistry
     public static void Register(Type pageType, string? key = null);
     public static Page CreatePage(string key);
     public static bool IsRegistered(string key);
+    public static Type? GetPageType(string key);
     public static void Clear();
 }
 ```
@@ -515,6 +601,29 @@ public static bool IsRegistered(string key)
 
 **Returns:**
 True if the key is registered, false otherwise.
+
+##### GetPageType
+
+Gets the page type for a registered key.
+
+```csharp
+public static Type? GetPageType(string key)
+```
+
+**Parameters:**
+- `key` (string): The key to look up
+
+**Returns:**
+The page type if found, null otherwise.
+
+**Example:**
+```csharp
+var pageType = PageRegistry.GetPageType("MainPage");
+if (pageType != null)
+{
+    // Page is registered
+}
+```
 
 ##### Clear
 

@@ -11,7 +11,9 @@
 - ✅ **Parameter Passing**: Pass and receive strongly-typed parameters during navigation
 - ✅ **ViewModel Locator**: Automatic View-ViewModel binding with convention-based or explicit registration
 - ✅ **String-Based Navigation**: Navigate using page names/keys like Prism (e.g., `NavigateToAsync("PageName")`)
+- ✅ **URI-Based Navigation**: Navigate using URI paths (e.g., `NavigateAsync("/NavigationPage/DetailPage")`)
 - ✅ **Instance-Based Navigation**: Navigate using page instances (e.g., `NavigateToAsync(new MyPage())`)
+- ✅ **Navigation Stack Control**: Navigate back to specific pages or root with `GoBackToAsync()` and `GoBackToRootAsync()`
 - ✅ **Prism-like API**: Familiar interface for developers coming from Prism
 - ✅ **Easy Integration**: Simple base class or interface implementation
 - ✅ **Cross-platform**: Works on all .NET MAUI supported platforms (iOS, Android, macOS, Windows)
@@ -469,6 +471,56 @@ public static class ViewModelLocationProvider
 
 ## Advanced Usage
 
+### URI-Based Navigation
+
+Navigate to multiple pages in sequence using a URI path:
+
+```csharp
+var navigationService = this.GetNavigationService();
+
+// Navigate through multiple pages
+await navigationService.NavigateAsync("/NavigationPage/MasterTabbedPage");
+
+// With parameters
+await navigationService.NavigateAsync(
+    "/NavigationPage/DetailPage",
+    new NavigationParameters { { "id", 123 } }
+);
+```
+
+### Navigate Back to Specific Page
+
+Pop the navigation stack to a specific page:
+
+```csharp
+var navigationService = this.GetNavigationService();
+
+// Navigate back to a specific page
+await navigationService.GoBackToAsync("SettingsPage");
+
+// With parameters
+await navigationService.GoBackToAsync(
+    "MainPage",
+    new NavigationParameters { { "result", "updated" } }
+);
+```
+
+### Navigate Back to Root
+
+Pop all pages and return to the root:
+
+```csharp
+var navigationService = this.GetNavigationService();
+
+// Navigate back to root
+await navigationService.GoBackToRootAsync();
+
+// With parameters
+await navigationService.GoBackToRootAsync(
+    new NavigationParameters { { "taskCompleted", true } }
+);
+```
+
 ### Dependency Injection
 
 You can optionally register the navigation service with the DI container:
@@ -524,6 +576,10 @@ If you're familiar with Prism, this plugin provides similar functionality:
 | `NavigationParameters` | `NavigationParameters` |
 | `OnNavigatedTo()` | `OnNavigatedTo()` |
 | `OnNavigatedFrom()` | `OnNavigatedFrom()` |
+| `NavigateAsync(string uri)` | `NavigateAsync(string uri)` |
+| `GoBackAsync()` | `GoBackAsync()` |
+| `GoBackToRootAsync()` | `GoBackToRootAsync()` |
+| Not available | `GoBackToAsync(string pageKey)` |
 
 ## Contributing
 

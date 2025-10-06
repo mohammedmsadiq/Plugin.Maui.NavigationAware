@@ -27,4 +27,27 @@ public interface INavigationService
     /// <param name="parameters">Navigation parameters</param>
     /// <returns>Task representing the navigation operation</returns>
     Task GoBackAsync(INavigationParameters? parameters = null);
+
+    /// <summary>
+    /// Navigate to a page using a URI path (e.g., "/NavigationPage/DetailPage")
+    /// </summary>
+    /// <param name="uri">The URI path representing the navigation hierarchy</param>
+    /// <param name="parameters">Navigation parameters</param>
+    /// <returns>Task representing the navigation operation</returns>
+    Task NavigateAsync(string uri, INavigationParameters? parameters = null);
+
+    /// <summary>
+    /// Navigate back to a specific page in the navigation stack
+    /// </summary>
+    /// <param name="pageKey">The key of the page to navigate back to</param>
+    /// <param name="parameters">Navigation parameters</param>
+    /// <returns>Task representing the navigation operation</returns>
+    Task GoBackToAsync(string pageKey, INavigationParameters? parameters = null);
+
+    /// <summary>
+    /// Navigate back to the root page
+    /// </summary>
+    /// <param name="parameters">Navigation parameters</param>
+    /// <returns>Task representing the navigation operation</returns>
+    Task GoBackToRootAsync(INavigationParameters? parameters = null);
 }

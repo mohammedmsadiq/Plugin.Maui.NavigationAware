@@ -97,6 +97,17 @@ public static class PageRegistry
     }
 
     /// <summary>
+    /// Gets the page type for a registered key
+    /// </summary>
+    /// <param name="key">The key to look up</param>
+    /// <returns>The page type if found, null otherwise</returns>
+    public static Type? GetPageType(string key)
+    {
+        _pageTypes.TryGetValue(key, out var pageType);
+        return pageType;
+    }
+
+    /// <summary>
     /// Clears all registered pages
     /// </summary>
     public static void Clear()

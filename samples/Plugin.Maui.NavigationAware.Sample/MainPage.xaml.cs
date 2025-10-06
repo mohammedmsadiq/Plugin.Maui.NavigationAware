@@ -44,5 +44,17 @@ public partial class MainPage : NavigationAwarePage
 		// Option 2: Navigate using string-based navigation (new approach)
 		await navigationService.NavigateToAsync("SecondPage", parameters);
 	}
+
+	private async void OnNavigateToViewModelPageClicked(object sender, EventArgs e)
+	{
+		var navigationService = this.GetNavigationService();
+		var parameters = new NavigationParameters
+		{
+			{ "message", "Hello from MainPage with ViewModel!" },
+			{ "timestamp", DateTime.Now }
+		};
+		
+		await navigationService.NavigateToAsync("ThirdPage", parameters);
+	}
 }
 

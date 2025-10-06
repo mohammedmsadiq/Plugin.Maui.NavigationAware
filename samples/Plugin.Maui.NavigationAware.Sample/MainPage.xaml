@@ -23,6 +23,12 @@
             Clicked="OnNavigateClicked"
             HorizontalOptions="Center" />
         
+        <Button 
+            x:Name="NavigateToViewModelPageButton"
+            Text="Navigate to ViewModel Locator Demo"
+            Clicked="OnNavigateToViewModelPageClicked"
+            HorizontalOptions="Center" />
+        
         <Label 
             x:Name="StatusLabel"
             Text="Navigation events will appear here..."

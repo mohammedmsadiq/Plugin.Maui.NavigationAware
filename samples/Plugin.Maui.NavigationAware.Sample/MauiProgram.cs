@@ -16,6 +16,9 @@ public static class MauiProgram
 				fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
 			});
 
+		// Register navigation service
+		builder.Services.AddNavigationAware();
+		
 		// Register pages
 		builder.Services.AddTransient<MainPage>();
 		builder.Services.AddTransient<SecondPage>();
@@ -35,9 +38,6 @@ public static class MauiProgram
 		// builder.Services.RegisterViewModel<MainPage, MainPageViewModel>();
 		// builder.Services.RegisterViewModel<SecondPage, SecondPageViewModel>();
 		// builder.Services.RegisterViewModel<ThirdPage, ThirdPageViewModel>();
-		
-		// Register navigation service (optional - can also use extension method)
-		// builder.Services.AddNavigationAware();
 
 		return builder.Build();
 	}

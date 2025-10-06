@@ -16,9 +16,27 @@ public static class NavigationExtensions
         {
             var navigation = Application.Current?.MainPage?.Navigation 
                 ?? throw new InvalidOperationException("Navigation not available");
+            
+            // Set the service provider for page resolution
+            PageRegistry.SetServiceProvider(sp);
+            
             return new NavigationService(navigation);
         });
 
+        return services;
+    }
+
+    /// <summary>
+    /// Registers a page type for string-based navigation
+    /// </summary>
+    /// <typeparam name="TPage">The page type</typeparam>
+    /// <param name="services">The service collection</param>
+    /// <param name="key">The key to register the page with (defaults to type name)</param>
+    /// <returns>The service collection for chaining</returns>
+    public static IServiceCollection RegisterPage<TPage>(this IServiceCollection services, string? key = null) 
+        where TPage : Page
+    {
+        PageRegistry.Register<TPage>(key);
         return services;
     }
 

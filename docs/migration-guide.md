@@ -29,7 +29,7 @@ If you're coming from Prism, you'll find Plugin.Maui.NavigationAware very famili
 | Feature | Prism | Plugin.Maui.NavigationAware |
 |---------|-------|----------------------------|
 | **Base Class** | No base class | `NavigationAwarePage` available |
-| **URI Navigation** | `NavigateAsync("MyPage")` | Direct page instance: `NavigateToAsync(new MyPage())` |
+| **URI Navigation** | `NavigateAsync("MyPage")` | Both supported: `NavigateToAsync("MyPage")` or `NavigateToAsync(new MyPage())` |
 | **Container Integration** | Required | Optional |
 | **ViewModel Support** | Built-in MVVM | You implement your own |
 | **Dialog Service** | Included | Not included |
@@ -114,7 +114,24 @@ private async void OnNavigateClicked(object sender, EventArgs e)
 
 **After (Plugin.Maui.NavigationAware):**
 ```csharp
-// Option 1: Use extension method (no DI required)
+// Option 1: Use string-based navigation (like Prism)
+private async void OnNavigateClicked(object sender, EventArgs e)
+{
+    var navigationService = this.GetNavigationService();
+    var parameters = new NavigationParameters
+    {
+        { "id", 123 }
+    };
+    
+    // Register pages in MauiProgram.cs first:
+    // builder.Services.RegisterPage<DetailsPage>();
+    
+    await navigationService.NavigateToAsync("DetailsPage", parameters);
+    // or using nameof for type safety:
+    await navigationService.NavigateToAsync(nameof(DetailsPage), parameters);
+}
+
+// Option 2: Use page instance navigation
 private async void OnNavigateClicked(object sender, EventArgs e)
 {
     var navigationService = this.GetNavigationService();
@@ -126,7 +143,7 @@ private async void OnNavigateClicked(object sender, EventArgs e)
     await navigationService.NavigateToAsync(new DetailsPage(), parameters);
 }
 
-// Option 2: Use DI (if configured)
+// Option 3: Use DI (if configured)
 private readonly INavigationService _navigationService;
 
 public MyPage(INavigationService navigationService)
@@ -141,11 +158,45 @@ private async void OnNavigateClicked(object sender, EventArgs e)
         { "id", 123 }
     };
     
-    await _navigationService.NavigateToAsync(new DetailsPage(), parameters);
+    await _navigationService.NavigateToAsync("DetailsPage", parameters);
 }
 ```
 
-#### Step 4: Update XAML
+#### Step 4: Register Pages for String-Based Navigation (Optional)
+
+If you want to use string-based navigation (like Prism's `NavigateAsync("PageName")`), register your pages in `MauiProgram.cs`:
+
+```csharp
+public static class MauiProgram
+{
+    public static MauiApp CreateMauiApp()
+    {
+        var builder = MauiApp.CreateBuilder();
+        builder.UseMauiApp<App>();
+
+        // Register pages for DI (optional)
+        builder.Services.AddTransient<MainPage>();
+        builder.Services.AddTransient<DetailsPage>();
+        
+        // Register pages for string-based navigation
+        builder.Services.RegisterPage<MainPage>();
+        builder.Services.RegisterPage<DetailsPage>();
+        // You can also use custom keys:
+        // builder.Services.RegisterPage<DetailsPage>("CustomKey");
+
+        return builder.Build();
+    }
+}
+```
+
+Now you can navigate using strings:
+```csharp
+await navigationService.NavigateToAsync("DetailsPage", parameters);
+// or for type safety:
+await navigationService.NavigateToAsync(nameof(DetailsPage), parameters);
+```
+
+#### Step 5: Update XAML
 
 **Before (Prism):**
 ```xml
@@ -165,7 +216,7 @@ private async void OnNavigateClicked(object sender, EventArgs e)
 </local:NavigationAwarePage>
 ```
 
-#### Step 5: Update Parameter Access
+#### Step 6: Update Parameter Access
 
 Parameter access remains the same:
 

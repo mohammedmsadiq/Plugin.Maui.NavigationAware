@@ -5,9 +5,10 @@ Welcome to the Plugin.Maui.NavigationAware documentation!
 ## Table of Contents
 
 1. [Getting Started](getting-started.md)
-2. [API Reference](api-reference.md)
-3. [Examples](examples.md)
-4. [Migration Guide](migration-guide.md)
+2. [ViewModel Locator Guide](viewmodel-locator-guide.md) ⭐ **New!**
+3. [API Reference](api-reference.md)
+4. [Examples](examples.md)
+5. [Migration Guide](migration-guide.md)
 
 ## Quick Links
 
@@ -22,7 +23,11 @@ Plugin.Maui.NavigationAware is a lightweight plugin for .NET MAUI that provides 
 ## Key Features
 
 - **Navigation Lifecycle Events**: Receive callbacks when navigating to or from a page
+- **Automatic ViewModel Binding**: Convention-based ViewModel location and binding with AutoWireViewModel
 - **Parameter Passing**: Pass strongly-typed parameters during navigation
+- **String-Based Navigation**: Navigate using page names or custom keys
+- **URI-Based Navigation**: Navigate using URI paths similar to Prism
+- **Dependency Injection**: Full DI support for ViewModels and services
 - **Simple Integration**: Easy-to-use base class or interface
 - **Cross-Platform**: Works on all .NET MAUI platforms
 - **Zero Dependencies**: No external dependencies beyond .NET MAUI

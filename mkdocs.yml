@@ -13,6 +13,7 @@ theme:
 nav:
   - Home: index.md
   - Getting Started: getting-started.md
+  - ViewModel Locator Guide: viewmodel-locator-guide.md
   - API Reference: api-reference.md
   - Examples: examples.md
   - Migration Guide: migration-guide.md

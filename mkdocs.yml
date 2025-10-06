@@ -1,0 +1,37 @@
+site_name: Plugin.Maui.NavigationAware
+site_description: Navigation Awareness for .NET MAUI - Prism-like Navigation Made Simple
+site_author: Mohammed Sadiq
+site_url: https://plugin-maui-navigationaware.readthedocs.io
+
+repo_name: mohammedmsadiq/Plugin.Maui.NavigationAware
+repo_url: https://github.com/mohammedmsadiq/Plugin.Maui.NavigationAware
+
+theme:
+  name: readthedocs
+  navigation_depth: 3
+  
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - API Reference: api-reference.md
+  - Examples: examples.md
+  - Migration Guide: migration-guide.md
+
+markdown_extensions:
+  - toc:
+      permalink: true
+  - admonition
+  - codehilite:
+      guess_lang: false
+  - def_list
+  - footnotes
+  - meta
+  - pymdownx.highlight
+  - pymdownx.superfences
+
+docs_dir: docs
+
+# Exclude files from the documentation build
+exclude_docs: |
+  README.md
+  index.html

@@ -28,12 +28,31 @@ Your documentation will be available at: `https://mohammedmsadiq.github.io/Plugi
 
 ### Option 2: Read the Docs
 
-You can use the markdown files with Read the Docs or other documentation platforms:
+You can publish the documentation using Read the Docs, which will automatically build and host it:
 
-1. Sign up at [Read the Docs](https://readthedocs.org/)
-2. Import your GitHub repository
-3. Configure to use `/docs` folder
-4. Your documentation will be built automatically
+1. **Sign up at Read the Docs**:
+   - Go to [Read the Docs](https://readthedocs.org/)
+   - Sign in with your GitHub account
+
+2. **Import your GitHub repository**:
+   - Click "Import a Project"
+   - Select the `Plugin.Maui.NavigationAware` repository from your GitHub account
+   - Click the "+" button next to it
+
+3. **Configure the project** (optional):
+   - The repository is already configured with `.readthedocs.yaml`
+   - The documentation will be built automatically using MkDocs
+   - Default settings should work out of the box
+
+4. **Build and publish**:
+   - Click "Build Version" or wait for the automatic build to start
+   - Your documentation will be available at: `https://plugin-maui-navigationaware.readthedocs.io/`
+   - Every push to the main branch will automatically rebuild the documentation
+
+**Configuration files:**
+- `.readthedocs.yaml` - Read the Docs configuration
+- `mkdocs.yml` - MkDocs documentation generator configuration
+- `docs/requirements.txt` - Python dependencies for building documentation
 
 ### Option 3: DocFX
 

@@ -333,6 +333,84 @@ public partial class MyPage : NavigationAwarePage
 }
 ```
 
+#### ViewModel Locator Setup Requirements
+
+For the ViewModel Locator to work properly, ensure you follow these steps:
+
+1. **Register Navigation Services**: Call `AddNavigationAware()` in your `MauiProgram.cs`:
+
+```csharp
+builder.Services.AddNavigationAware();
+```
+
+2. **Register ViewModels in DI** (if using dependency injection):
+
+```csharp
+builder.Services.AddTransient<MainPageViewModel>();
+builder.Services.AddTransient<DetailsPageViewModel>();
+```
+
+3. **Use the attached property in XAML** or call `AutoWireViewModel` programmatically:
+
+```xml
+<local:NavigationAwarePage 
+    xmlns:nav="clr-namespace:Plugin.Maui.NavigationAware;assembly=Plugin.Maui.NavigationAware"
+    nav:ViewModelLocator.AutoWireViewModel="True">
+```
+
+#### ViewModel Locator Troubleshooting
+
+**Problem**: ViewModel is not being set (BindingContext is null)
+
+**Solutions**:
+1. **Check naming conventions**: Ensure your ViewModel follows the naming convention:
+   - `MainPage` → `MainPageViewModel`
+   - `DetailsView` → `DetailsViewModel`
+   
+2. **Check namespace**: The ViewModel must be in the same namespace as the View, or you need to customize the resolver.
+
+3. **Register explicitly** if conventions don't work:
+   ```csharp
+   builder.Services.RegisterViewModel<MainPage, MainPageViewModel>();
+   ```
+
+4. **Enable debug output**: Check the Debug output window for messages from `ViewModelLocationProvider` that explain what's happening.
+
+5. **Verify ViewModel constructor**: Ensure your ViewModel has a parameterless constructor, OR is registered in the DI container with all its dependencies.
+
+**Problem**: ViewModel constructor dependencies not resolved
+
+**Solution**: Register the ViewModel and its dependencies in DI:
+```csharp
+// Register dependencies
+builder.Services.AddSingleton<IDataService, DataService>();
+
+// Register ViewModel
+builder.Services.AddTransient<MainPageViewModel>();
+```
+
+**Problem**: Custom namespace for ViewModels
+
+**Solution**: Customize the ViewModel resolver in `App.xaml.cs` or `MauiProgram.cs`:
+```csharp
+ViewModelLocationProvider.DefaultViewTypeToViewModelTypeResolver = viewType =>
+{
+    var viewName = viewType.Name;
+    // Look in a separate ViewModels namespace
+    var viewModelTypeName = $"{viewType.Namespace}.ViewModels.{viewName}ViewModel";
+    var viewModelType = viewType.Assembly.GetType(viewModelTypeName);
+    
+    // Fallback to default namespace
+    if (viewModelType == null)
+    {
+        viewModelTypeName = $"{viewType.Namespace}.{viewName}ViewModel";
+        viewModelType = viewType.Assembly.GetType(viewModelTypeName);
+    }
+    
+    return viewModelType;
+};
+```
+
 ## API Reference
 
 ### Core Interfaces

@@ -660,6 +660,47 @@ public partial class MainPage : NavigationAwarePage
 
 ## ViewModel Locator
 
+The ViewModel Locator provides automatic ViewModel binding for your Views, eliminating boilerplate code and making MVVM easier to implement.
+
+### Quick Start Guide
+
+To use the ViewModel Locator, follow these steps:
+
+1. **Register navigation services** in `MauiProgram.cs`:
+
+```csharp
+public static class MauiProgram
+{
+    public static MauiApp CreateMauiApp()
+    {
+        var builder = MauiApp.CreateBuilder();
+        builder.UseMauiApp<App>();
+
+        // IMPORTANT: Register navigation services first
+        builder.Services.AddNavigationAware();
+        
+        // Register your ViewModels in DI (recommended)
+        builder.Services.AddTransient<MainPageViewModel>();
+        builder.Services.AddTransient<DetailsPageViewModel>();
+        
+        return builder.Build();
+    }
+}
+```
+
+2. **Create your ViewModel** following naming conventions:
+   - For `MainPage`, create `MainPageViewModel`
+   - For `DetailsPage`, create `DetailsPageViewModel`
+   - For `ProfileView`, create `ProfileViewModel`
+
+3. **Use the attached property** in your XAML:
+
+```xml
+<local:NavigationAwarePage 
+    xmlns:nav="clr-namespace:Plugin.Maui.NavigationAware;assembly=Plugin.Maui.NavigationAware"
+    nav:ViewModelLocator.AutoWireViewModel="True">
+```
+
 ### Using Automatic ViewModel Binding in XAML
 
 Automatically wire up ViewModels using the `AutoWireViewModel` attached property.
@@ -979,6 +1020,200 @@ public partial class DetailsPage : NavigationAwarePage
     }
 }
 ```
+
+---
+
+### ViewModel Locator Troubleshooting
+
+This section helps you diagnose and fix common issues with the ViewModel Locator.
+
+#### Issue: ViewModel is not being set (BindingContext is null)
+
+**Check the Debug Output**
+
+The ViewModelLocationProvider logs debug messages. Check your IDE's debug output window for messages like:
+```
+[ViewModelLocationProvider] Could not resolve ViewModel for View type 'MyApp.MainPage'...
+```
+
+**Common Causes and Solutions:**
+
+1. **Naming Convention Not Followed**
+
+   Problem: Your View is named `MainPage` but ViewModel is named `MainViewModel` (not `MainPageViewModel`)
+   
+   Solution A - Rename your ViewModel:
+   ```csharp
+   // Change from:
+   public class MainViewModel { }
+   
+   // To:
+   public class MainPageViewModel { }
+   ```
+   
+   Solution B - Register explicitly:
+   ```csharp
+   // In MauiProgram.cs
+   builder.Services.RegisterViewModel<MainPage, MainViewModel>();
+   ```
+
+2. **Different Namespace**
+
+   Problem: View is in `MyApp.Pages` but ViewModel is in `MyApp.ViewModels`
+   
+   Solution: Customize the resolver in your `App.xaml.cs`:
+   ```csharp
+   public App()
+   {
+       InitializeComponent();
+       
+       // Configure custom namespace resolution
+       ViewModelLocationProvider.DefaultViewTypeToViewModelTypeResolver = viewType =>
+       {
+           var viewName = viewType.Name;
+           
+           // Try ViewModels namespace first
+           var viewModelTypeName = $"MyApp.ViewModels.{viewName}ViewModel";
+           var viewModelType = viewType.Assembly.GetType(viewModelTypeName);
+           
+           if (viewModelType != null)
+               return viewModelType;
+           
+           // Fallback to same namespace
+           viewModelTypeName = $"{viewType.Namespace}.{viewName}ViewModel";
+           return viewType.Assembly.GetType(viewModelTypeName);
+       };
+       
+       MainPage = new AppShell();
+   }
+   ```
+
+3. **ViewModel Not Registered in DI**
+
+   Problem: ViewModel has dependencies that can't be resolved
+   
+   Solution: Register the ViewModel and its dependencies:
+   ```csharp
+   // In MauiProgram.cs
+   builder.Services.AddNavigationAware();
+   
+   // Register dependencies
+   builder.Services.AddSingleton<IDataService, DataService>();
+   
+   // Register ViewModel
+   builder.Services.AddTransient<MainPageViewModel>();
+   ```
+
+#### Issue: ViewModel constructor throws exception
+
+**Problem**: ViewModel has dependencies but they're not registered
+
+**Solution**: Ensure all dependencies are registered in DI before the ViewModel:
+
+```csharp
+public static MauiApp CreateMauiApp()
+{
+    var builder = MauiApp.CreateBuilder();
+    builder.UseMauiApp<App>();
+    
+    // 1. Register navigation services FIRST
+    builder.Services.AddNavigationAware();
+    
+    // 2. Register services/dependencies
+    builder.Services.AddSingleton<IUserService, UserService>();
+    builder.Services.AddSingleton<IDataService, DataService>();
+    
+    // 3. Register ViewModels LAST
+    builder.Services.AddTransient<MainPageViewModel>();
+    
+    return builder.Build();
+}
+```
+
+**Alternative**: Use parameterless constructor and property injection:
+
+```csharp
+public class MainPageViewModel : INotifyPropertyChanged
+{
+    private IUserService? _userService;
+    
+    // Parameterless constructor for AutoWireViewModel
+    public MainPageViewModel()
+    {
+        // Get service from DI when needed
+        _userService = Application.Current?.Handler?.MauiContext?.Services
+            .GetService<IUserService>();
+    }
+    
+    // Or use property injection
+    public IUserService UserService { get; set; } = null!;
+}
+```
+
+#### Issue: AutoWireViewModel doesn't work with ContentView
+
+**Problem**: ContentView doesn't support ViewModel binding
+
+**Solution**: Use UserControl or ContentPage instead, or set BindingContext manually:
+
+```csharp
+public partial class MyContentView : ContentView
+{
+    public MyContentView()
+    {
+        InitializeComponent();
+        
+        // Manually wire up ViewModel
+        ViewModelLocationProvider.AutoWireViewModel(this);
+    }
+}
+```
+
+#### Issue: Multiple pages share the same ViewModel type
+
+**Problem**: You want different ViewModel instances for different pages
+
+**Solution**: Use factory registration:
+
+```csharp
+builder.Services.RegisterViewModel<Page1>(sp => 
+    new SharedViewModel { Title = "Page 1" });
+    
+builder.Services.RegisterViewModel<Page2>(sp => 
+    new SharedViewModel { Title = "Page 2" });
+```
+
+#### Debugging Tips
+
+1. **Enable verbose logging**: Check the Debug output window for `[ViewModelLocationProvider]` messages
+
+2. **Verify ViewModel can be created**:
+   ```csharp
+   // Test in your page constructor
+   try
+   {
+       var vm = new MainPageViewModel();
+       Console.WriteLine($"ViewModel created: {vm != null}");
+   }
+   catch (Exception ex)
+   {
+       Console.WriteLine($"Error creating ViewModel: {ex.Message}");
+   }
+   ```
+
+3. **Check if AutoWireViewModel is called**:
+   ```csharp
+   public partial class MainPage : NavigationAwarePage
+   {
+       public MainPage()
+       {
+           InitializeComponent();
+           
+           // Check if BindingContext was set
+           Console.WriteLine($"BindingContext after init: {BindingContext?.GetType().Name ?? "null"}");
+       }
+   }
+   ```
 
 ---
 

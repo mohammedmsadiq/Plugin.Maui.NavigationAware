@@ -120,7 +120,10 @@ public static class ViewModelLocationProvider
 
         if (resolvedViewModelType == null)
         {
-            // No ViewModel found, skip autowiring
+            // No ViewModel found - Log a debug message to help developers
+            System.Diagnostics.Debug.WriteLine(
+                $"[ViewModelLocationProvider] Could not resolve ViewModel for View type '{viewType.FullName}'. " +
+                $"Ensure the ViewModel follows naming conventions (e.g., {viewType.Name}ViewModel) or is explicitly registered.");
             return;
         }
 
@@ -167,6 +170,15 @@ public static class ViewModelLocationProvider
         if (view is Element element)
         {
             element.BindingContext = viewModel;
+            System.Diagnostics.Debug.WriteLine(
+                $"[ViewModelLocationProvider] Successfully set BindingContext for '{view.GetType().Name}' " +
+                $"to ViewModel of type '{viewModel.GetType().Name}'");
+        }
+        else
+        {
+            System.Diagnostics.Debug.WriteLine(
+                $"[ViewModelLocationProvider] Warning: Cannot set BindingContext for type '{view.GetType().Name}' " +
+                $"because it does not inherit from Element");
         }
     }
 

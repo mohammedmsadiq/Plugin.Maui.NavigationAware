@@ -673,6 +673,29 @@ Attached property to enable automatic ViewModel wiring.
 **Remarks:**
 When set to true, automatically resolves and binds a ViewModel to the View's BindingContext using convention-based naming or explicit registration.
 
+**Requirements:**
+1. Call `builder.Services.AddNavigationAware()` in `MauiProgram.cs`
+2. ViewModel must follow naming conventions or be explicitly registered
+3. ViewModel must have a parameterless constructor OR be registered in DI
+
+**Naming Conventions:**
+- `MainPage` → `MainPageViewModel`
+- `DetailsPage` → `DetailsPageViewModel` or `DetailsViewModel`
+- `ProfileView` → `ProfileViewModel`
+
+**How it works:**
+1. Checks for registered factory (via `RegisterViewModel<TView>(factory)`)
+2. Checks for explicitly registered type (via `RegisterViewModel<TView, TViewModel>()`)
+3. Uses convention-based resolution (via `DefaultViewTypeToViewModelTypeResolver`)
+4. Resolves from DI container if ViewModel is registered
+5. Falls back to `Activator.CreateInstance` if ViewModel has parameterless constructor
+
+**Troubleshooting:**
+- Check Debug output for `[ViewModelLocationProvider]` messages
+- Verify ViewModel naming follows conventions
+- Ensure ViewModel and dependencies are registered in DI
+- See examples documentation for detailed troubleshooting guide
+
 ##### ViewModelTypeProperty
 
 Attached property to specify a specific ViewModel type.

@@ -12,6 +12,12 @@ public static class NavigationExtensions
     /// <returns>The service collection for chaining</returns>
     public static IServiceCollection AddNavigationAware(this IServiceCollection services)
     {
+        // Build a temporary service provider to set it immediately for ViewModel resolution
+        // This ensures ViewModelLocationProvider can resolve ViewModels from DI even before
+        // INavigationService is first requested
+        var tempServiceProvider = services.BuildServiceProvider();
+        ViewModelLocationProvider.SetServiceProvider(tempServiceProvider);
+        
         services.AddSingleton<INavigationService, NavigationService>(sp =>
         {
             var navigation = Application.Current?.MainPage?.Navigation 
@@ -20,7 +26,7 @@ public static class NavigationExtensions
             // Set the service provider for page resolution
             PageRegistry.SetServiceProvider(sp);
             
-            // Set the service provider for ViewModel resolution
+            // Update the service provider for ViewModel resolution with the actual one
             ViewModelLocationProvider.SetServiceProvider(sp);
             
             return new NavigationService(navigation);

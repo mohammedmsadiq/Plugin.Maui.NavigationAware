@@ -9,6 +9,7 @@
 
 - ✅ **Navigation Awareness**: Receive notifications when navigating to or from a page
 - ✅ **Parameter Passing**: Pass and receive strongly-typed parameters during navigation
+- ✅ **ViewModel Locator**: Automatic View-ViewModel binding with convention-based or explicit registration
 - ✅ **String-Based Navigation**: Navigate using page names/keys like Prism (e.g., `NavigateToAsync("PageName")`)
 - ✅ **Instance-Based Navigation**: Navigate using page instances (e.g., `NavigateToAsync(new MyPage())`)
 - ✅ **Prism-like API**: Familiar interface for developers coming from Prism
@@ -212,6 +213,124 @@ private async void OnGoBackClicked(object sender, EventArgs e)
 }
 ```
 
+### ViewModel Locator
+
+The plugin includes a powerful ViewModel Locator that automates the binding between Views and ViewModels, reducing boilerplate code and making it easier to maintain the MVVM pattern.
+
+#### Automatic ViewModel Binding in XAML
+
+Use the `AutoWireViewModel` attached property to automatically bind a ViewModel to your View:
+
+```xml
+<?xml version="1.0" encoding="utf-8" ?>
+<local:NavigationAwarePage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:local="clr-namespace:Plugin.Maui.NavigationAware;assembly=Plugin.Maui.NavigationAware"
+             xmlns:nav="clr-namespace:Plugin.Maui.NavigationAware;assembly=Plugin.Maui.NavigationAware"
+             x:Class="MyApp.MainPage"
+             nav:ViewModelLocator.AutoWireViewModel="True"
+             Title="Main Page">
+    <!-- Your content here -->
+</local:NavigationAwarePage>
+```
+
+The ViewModel Locator will automatically find and create a ViewModel based on naming conventions:
+- `MainPage` → `MainPageViewModel`
+- `DetailsPage` → `DetailsPageViewModel`
+- `MainView` → `MainViewModel`
+
+#### Convention-Based ViewModel Resolution
+
+By default, the ViewModel Locator uses convention-based naming to find ViewModels. For a page named `MainPage`, it will look for:
+1. `MainPageViewModel` in the same namespace
+2. `MainViewModel` (if page ends with "Page")
+
+You can customize the convention by setting the `DefaultViewTypeToViewModelTypeResolver`:
+
+```csharp
+ViewModelLocationProvider.DefaultViewTypeToViewModelTypeResolver = viewType =>
+{
+    // Your custom logic to resolve ViewModel type from View type
+    var viewName = viewType.Name;
+    var viewModelTypeName = $"{viewType.Namespace}.ViewModels.{viewName}ViewModel";
+    return viewType.Assembly.GetType(viewModelTypeName);
+};
+```
+
+#### Explicit ViewModel Registration
+
+You can explicitly register ViewModels for specific Views in your `MauiProgram.cs`:
+
+```csharp
+public static class MauiProgram
+{
+    public static MauiApp CreateMauiApp()
+    {
+        var builder = MauiApp.CreateBuilder();
+        builder.UseMauiApp<App>();
+
+        // Register navigation service
+        builder.Services.AddNavigationAware();
+        
+        // Register pages and ViewModels
+        builder.Services.AddTransient<MainPage>();
+        builder.Services.AddTransient<MainPageViewModel>();
+        
+        // Explicitly register ViewModel for a View
+        builder.Services.RegisterViewModel<MainPage, MainPageViewModel>();
+        
+        // Or use a factory method
+        builder.Services.RegisterViewModel<DetailsPage>(sp => 
+            new DetailsPageViewModel(sp.GetRequiredService<IDataService>()));
+
+        return builder.Build();
+    }
+}
+```
+
+#### Programmatic ViewModel Binding
+
+You can also wire up ViewModels programmatically:
+
+```csharp
+public partial class MyPage : NavigationAwarePage
+{
+    public MyPage()
+    {
+        InitializeComponent();
+        
+        // Automatically wire up ViewModel based on convention
+        ViewModelLocationProvider.AutoWireViewModel(this);
+        
+        // Or specify a specific ViewModel type
+        // ViewModelLocationProvider.AutoWireViewModel(this, typeof(MyCustomViewModel));
+    }
+}
+```
+
+#### Using ViewModels with Navigation
+
+When using ViewModels, you can update them in the navigation lifecycle methods:
+
+```csharp
+public partial class MyPage : NavigationAwarePage
+{
+    public override void OnNavigatedTo(INavigationParameters parameters)
+    {
+        base.OnNavigatedTo(parameters);
+        
+        if (BindingContext is MyPageViewModel viewModel)
+        {
+            // Access parameters and update ViewModel
+            if (parameters.TryGetValue<int>("userId", out var userId))
+            {
+                viewModel.LoadUser(userId);
+            }
+        }
+    }
+}
+```
+
 ## API Reference
 
 ### Core Interfaces
@@ -283,6 +402,68 @@ public static class NavigationExtensions
     // Register a page type for string-based navigation
     public static IServiceCollection RegisterPage<TPage>(this IServiceCollection services, string? key = null) 
         where TPage : Page;
+    
+    // Register a ViewModel for a specific View type
+    public static IServiceCollection RegisterViewModel<TView, TViewModel>(this IServiceCollection services)
+        where TView : BindableObject;
+    
+    // Register a ViewModel using a factory method
+    public static IServiceCollection RegisterViewModel<TView>(this IServiceCollection services, 
+        Func<IServiceProvider, object> factory)
+        where TView : BindableObject;
+}
+```
+
+### ViewModel Locator Classes
+
+#### ViewModelLocator
+
+Provides attached properties for automatic ViewModel location and binding in XAML.
+
+```csharp
+public static class ViewModelLocator
+{
+    // Attached property to enable automatic ViewModel wiring
+    public static readonly BindableProperty AutoWireViewModelProperty;
+    
+    // Gets/Sets the AutoWireViewModel attached property value
+    public static bool GetAutoWireViewModel(BindableObject bindable);
+    public static void SetAutoWireViewModel(BindableObject bindable, bool value);
+    
+    // Attached property to specify a specific ViewModel type
+    public static readonly BindableProperty ViewModelTypeProperty;
+    
+    // Gets/Sets the ViewModelType attached property value
+    public static Type? GetViewModelType(BindableObject bindable);
+    public static void SetViewModelType(BindableObject bindable, Type? value);
+}
+```
+
+#### ViewModelLocationProvider
+
+Provides a mechanism for resolving ViewModels based on Views using naming conventions.
+
+```csharp
+public static class ViewModelLocationProvider
+{
+    // Default convention for resolving ViewModel type names from View type names
+    public static Func<Type, Type?> DefaultViewTypeToViewModelTypeResolver { get; set; }
+    
+    // Sets the service provider for ViewModel resolution
+    public static void SetServiceProvider(IServiceProvider serviceProvider);
+    
+    // Registers a ViewModel type for a specific View type
+    public static void Register<TView, TViewModel>() where TView : BindableObject;
+    public static void Register(Type viewType, Type viewModelType);
+    
+    // Registers a factory method for creating ViewModels
+    public static void Register<TView>(Func<object> factory) where TView : BindableObject;
+    
+    // Automatically wires up the ViewModel for a View
+    public static void AutoWireViewModel(BindableObject view, Type? viewModelType = null);
+    
+    // Clears all registered ViewModels and factories
+    public static void Clear();
 }
 ```
 

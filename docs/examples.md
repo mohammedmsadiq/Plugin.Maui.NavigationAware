@@ -12,6 +12,7 @@ This page provides practical examples of using Plugin.Maui.NavigationAware in va
 6. [Master-Detail Navigation](#master-detail-navigation)
 7. [Modal Navigation](#modal-navigation)
 8. [Dependency Injection](#dependency-injection)
+9. [ViewModel Locator](#viewmodel-locator)
 
 ---
 
@@ -648,6 +649,330 @@ public partial class MainPage : NavigationAwarePage
         };
         
         await _navigationService.NavigateToAsync(new DetailsPage(), parameters);
+    }
+}
+```
+
+---
+
+## ViewModel Locator
+
+### Using Automatic ViewModel Binding in XAML
+
+Automatically wire up ViewModels using the `AutoWireViewModel` attached property.
+
+#### MainPage.xaml
+
+```xml
+<?xml version="1.0" encoding="utf-8" ?>
+<local:NavigationAwarePage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:local="clr-namespace:Plugin.Maui.NavigationAware;assembly=Plugin.Maui.NavigationAware"
+             xmlns:nav="clr-namespace:Plugin.Maui.NavigationAware;assembly=Plugin.Maui.NavigationAware"
+             x:Class="MyApp.MainPage"
+             nav:ViewModelLocator.AutoWireViewModel="True"
+             Title="Main Page">
+
+    <VerticalStackLayout Padding="30" Spacing="25">
+        <Label Text="Welcome!" FontSize="32" FontAttributes="Bold" />
+        
+        <Label Text="{Binding StatusMessage}" FontSize="16" />
+        
+        <Entry Text="{Binding InputMessage}" Placeholder="Enter message" />
+        
+        <Button Text="Navigate" Command="{Binding NavigateCommand}" />
+    </VerticalStackLayout>
+
+</local:NavigationAwarePage>
+```
+
+#### MainPageViewModel.cs
+
+```csharp
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
+using System.Windows.Input;
+
+namespace MyApp;
+
+public class MainPageViewModel : INotifyPropertyChanged
+{
+    private string _statusMessage = "Ready";
+    private string _inputMessage = string.Empty;
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    public string StatusMessage
+    {
+        get => _statusMessage;
+        set
+        {
+            if (_statusMessage != value)
+            {
+                _statusMessage = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public string InputMessage
+    {
+        get => _inputMessage;
+        set
+        {
+            if (_inputMessage != value)
+            {
+                _inputMessage = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public ICommand NavigateCommand { get; }
+
+    public MainPageViewModel()
+    {
+        NavigateCommand = new Command(async () => await OnNavigate());
+    }
+
+    private async Task OnNavigate()
+    {
+        StatusMessage = "Navigating...";
+        // Navigation logic here
+    }
+
+    protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+}
+```
+
+#### MainPage.xaml.cs
+
+```csharp
+using Plugin.Maui.NavigationAware;
+
+namespace MyApp;
+
+public partial class MainPage : NavigationAwarePage
+{
+    public MainPage()
+    {
+        InitializeComponent();
+        // ViewModel is automatically bound via ViewModelLocator
+    }
+
+    public override void OnNavigatedTo(INavigationParameters parameters)
+    {
+        base.OnNavigatedTo(parameters);
+        
+        // Access the ViewModel to update with navigation parameters
+        if (BindingContext is MainPageViewModel viewModel)
+        {
+            if (parameters.TryGetValue<string>("message", out var message))
+            {
+                viewModel.StatusMessage = message;
+            }
+        }
+    }
+}
+```
+
+---
+
+### Explicit ViewModel Registration
+
+Register ViewModels explicitly in your DI container.
+
+#### MauiProgram.cs
+
+```csharp
+using Plugin.Maui.NavigationAware;
+
+namespace MyApp;
+
+public static class MauiProgram
+{
+    public static MauiApp CreateMauiApp()
+    {
+        var builder = MauiApp.CreateBuilder();
+        builder.UseMauiApp<App>();
+
+        // Register navigation service
+        builder.Services.AddNavigationAware();
+        
+        // Register pages
+        builder.Services.AddTransient<MainPage>();
+        builder.Services.AddTransient<DetailsPage>();
+        
+        // Register ViewModels
+        builder.Services.AddTransient<MainPageViewModel>();
+        builder.Services.AddTransient<DetailsPageViewModel>();
+        
+        // Explicitly register ViewModel for View
+        builder.Services.RegisterViewModel<MainPage, MainPageViewModel>();
+        builder.Services.RegisterViewModel<DetailsPage, DetailsPageViewModel>();
+        
+        // Register with factory for dependency injection
+        builder.Services.RegisterViewModel<ProfilePage>(sp => 
+            new ProfilePageViewModel(
+                sp.GetRequiredService<IUserService>(),
+                sp.GetRequiredService<INavigationService>()
+            ));
+
+        return builder.Build();
+    }
+}
+```
+
+---
+
+### Custom ViewModel Resolution Convention
+
+Customize the naming convention for ViewModel resolution.
+
+#### App.xaml.cs
+
+```csharp
+using Plugin.Maui.NavigationAware;
+
+namespace MyApp;
+
+public partial class App : Application
+{
+    public App()
+    {
+        InitializeComponent();
+
+        // Customize ViewModel resolution convention
+        ViewModelLocationProvider.DefaultViewTypeToViewModelTypeResolver = viewType =>
+        {
+            // Example: Look for ViewModels in a separate namespace
+            var viewName = viewType.Name;
+            var viewModelTypeName = $"{viewType.Namespace}.ViewModels.{viewName}ViewModel";
+            
+            var viewModelType = viewType.Assembly.GetType(viewModelTypeName);
+            if (viewModelType != null)
+                return viewModelType;
+            
+            // Fallback to default convention
+            viewModelTypeName = $"{viewType.Namespace}.{viewName}ViewModel";
+            return viewType.Assembly.GetType(viewModelTypeName);
+        };
+
+        MainPage = new AppShell();
+    }
+}
+```
+
+---
+
+### ViewModel with Navigation Parameters
+
+Handle navigation parameters in your ViewModel.
+
+#### DetailsPageViewModel.cs
+
+```csharp
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
+
+namespace MyApp;
+
+public class DetailsPageViewModel : INotifyPropertyChanged
+{
+    private string _title = string.Empty;
+    private int _itemId;
+    private string _description = string.Empty;
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    public string Title
+    {
+        get => _title;
+        set
+        {
+            if (_title != value)
+            {
+                _title = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public int ItemId
+    {
+        get => _itemId;
+        set
+        {
+            if (_itemId != value)
+            {
+                _itemId = value;
+                OnPropertyChanged();
+                LoadItem(value);
+            }
+        }
+    }
+
+    public string Description
+    {
+        get => _description;
+        set
+        {
+            if (_description != value)
+            {
+                _description = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    private async void LoadItem(int itemId)
+    {
+        // Load item data
+        Title = $"Item {itemId}";
+        Description = $"Details for item {itemId}";
+    }
+
+    protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+}
+```
+
+#### DetailsPage.xaml.cs
+
+```csharp
+using Plugin.Maui.NavigationAware;
+
+namespace MyApp;
+
+public partial class DetailsPage : NavigationAwarePage
+{
+    public DetailsPage()
+    {
+        InitializeComponent();
+    }
+
+    public override void OnNavigatedTo(INavigationParameters parameters)
+    {
+        base.OnNavigatedTo(parameters);
+        
+        // Update ViewModel with navigation parameters
+        if (BindingContext is DetailsPageViewModel viewModel)
+        {
+            if (parameters.TryGetValue<int>("itemId", out var itemId))
+            {
+                viewModel.ItemId = itemId;
+            }
+            
+            if (parameters.TryGetValue<string>("title", out var title))
+            {
+                viewModel.Title = title;
+            }
+        }
     }
 }
 ```

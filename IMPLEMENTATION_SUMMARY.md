@@ -18,9 +18,15 @@ This plugin provides navigation awareness for .NET MAUI applications, similar to
    - `NavigationParameters` - Implementation of parameter dictionary with type-safe access
    - `NavigationService` - Service for performing navigation with parameters
 
-3. **Extension Methods**
+3. **ViewModel Locator**
+   - `ViewModelLocator` - Attached properties for automatic ViewModel binding in XAML
+   - `ViewModelLocationProvider` - Convention-based and explicit ViewModel resolution
+   - Automatic View-ViewModel binding with minimal boilerplate
+
+4. **Extension Methods**
    - `GetNavigationService()` - Get navigation service from any page
    - `AddNavigationAware()` - Register navigation service with DI container
+   - `RegisterViewModel()` - Register ViewModels for automatic binding
 
 ### Sample Application
 
@@ -30,6 +36,8 @@ The sample application demonstrates:
 - Receiving parameters in OnNavigatedTo
 - Returning data when navigating back
 - Using the NavigationService
+- Automatic ViewModel binding with ViewModelLocator
+- Convention-based and explicit ViewModel registration
 
 ### Documentation
 
@@ -162,6 +170,7 @@ Plugin.Maui.NavigationAware/
 
 ✅ **Prism-like Navigation** - Familiar API for developers coming from Prism
 ✅ **Strongly-typed Parameters** - Type-safe parameter passing
+✅ **ViewModel Locator** - Automatic View-ViewModel binding with convention-based naming
 ✅ **Easy Integration** - Simple base class or interface
 ✅ **Cross-platform** - Works on iOS, Android, macOS, Windows
 ✅ **Zero Dependencies** - No external dependencies beyond .NET MAUI

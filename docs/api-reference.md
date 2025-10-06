@@ -529,6 +529,265 @@ This is mainly useful for testing scenarios.
 
 ---
 
+### ViewModelLocator
+
+Provides attached properties for automatic ViewModel location and binding in XAML.
+
+```csharp
+public static class ViewModelLocator
+{
+    public static readonly BindableProperty AutoWireViewModelProperty;
+    public static readonly BindableProperty ViewModelTypeProperty;
+    
+    public static bool GetAutoWireViewModel(BindableObject bindable);
+    public static void SetAutoWireViewModel(BindableObject bindable, bool value);
+    public static Type? GetViewModelType(BindableObject bindable);
+    public static void SetViewModelType(BindableObject bindable, Type? value);
+}
+```
+
+#### Attached Properties
+
+##### AutoWireViewModelProperty
+
+Attached property to enable automatic ViewModel wiring.
+
+**Usage in XAML:**
+```xml
+<local:NavigationAwarePage 
+    xmlns:nav="clr-namespace:Plugin.Maui.NavigationAware;assembly=Plugin.Maui.NavigationAware"
+    nav:ViewModelLocator.AutoWireViewModel="True">
+    <!-- Content -->
+</local:NavigationAwarePage>
+```
+
+**Remarks:**
+When set to true, automatically resolves and binds a ViewModel to the View's BindingContext using convention-based naming or explicit registration.
+
+##### ViewModelTypeProperty
+
+Attached property to specify a specific ViewModel type.
+
+**Usage in XAML:**
+```xml
+<local:NavigationAwarePage 
+    xmlns:nav="clr-namespace:Plugin.Maui.NavigationAware;assembly=Plugin.Maui.NavigationAware"
+    xmlns:vm="clr-namespace:MyApp.ViewModels"
+    nav:ViewModelLocator.ViewModelType="{x:Type vm:CustomViewModel}">
+    <!-- Content -->
+</local:NavigationAwarePage>
+```
+
+**Remarks:**
+Allows you to explicitly specify which ViewModel type to use instead of relying on convention-based resolution.
+
+#### Methods
+
+##### GetAutoWireViewModel
+
+Gets the AutoWireViewModel attached property value.
+
+```csharp
+public static bool GetAutoWireViewModel(BindableObject bindable)
+```
+
+**Parameters:**
+- `bindable` (BindableObject): The bindable object
+
+**Returns:**
+True if auto-wiring is enabled, false otherwise.
+
+##### SetAutoWireViewModel
+
+Sets the AutoWireViewModel attached property value.
+
+```csharp
+public static void SetAutoWireViewModel(BindableObject bindable, bool value)
+```
+
+**Parameters:**
+- `bindable` (BindableObject): The bindable object
+- `value` (bool): True to enable auto-wiring, false otherwise
+
+##### GetViewModelType
+
+Gets the ViewModelType attached property value.
+
+```csharp
+public static Type? GetViewModelType(BindableObject bindable)
+```
+
+**Parameters:**
+- `bindable` (BindableObject): The bindable object
+
+**Returns:**
+The ViewModel type, or null if not set.
+
+##### SetViewModelType
+
+Sets the ViewModelType attached property value.
+
+```csharp
+public static void SetViewModelType(BindableObject bindable, Type? value)
+```
+
+**Parameters:**
+- `bindable` (BindableObject): The bindable object
+- `value` (Type, optional): The ViewModel type
+
+---
+
+### ViewModelLocationProvider
+
+Provides a mechanism for resolving ViewModels based on Views using naming conventions.
+
+```csharp
+public static class ViewModelLocationProvider
+{
+    public static Func<Type, Type?> DefaultViewTypeToViewModelTypeResolver { get; set; }
+    
+    public static void SetServiceProvider(IServiceProvider serviceProvider);
+    public static void Register<TView, TViewModel>() where TView : BindableObject;
+    public static void Register(Type viewType, Type viewModelType);
+    public static void Register<TView>(Func<object> factory) where TView : BindableObject;
+    public static void AutoWireViewModel(BindableObject view, Type? viewModelType = null);
+    public static void Clear();
+}
+```
+
+#### Properties
+
+##### DefaultViewTypeToViewModelTypeResolver
+
+Default convention for resolving ViewModel type names from View type names.
+
+```csharp
+public static Func<Type, Type?> DefaultViewTypeToViewModelTypeResolver { get; set; }
+```
+
+**Default Behavior:**
+- `MainPage` → `MainPageViewModel`
+- `MainView` → `MainViewModel`
+- `DetailsPage` → `DetailsPageViewModel`
+
+**Example:**
+```csharp
+ViewModelLocationProvider.DefaultViewTypeToViewModelTypeResolver = viewType =>
+{
+    var viewName = viewType.Name;
+    var viewModelTypeName = $"{viewType.Namespace}.ViewModels.{viewName}ViewModel";
+    return viewType.Assembly.GetType(viewModelTypeName);
+};
+```
+
+#### Methods
+
+##### SetServiceProvider
+
+Sets the service provider for ViewModel resolution.
+
+```csharp
+public static void SetServiceProvider(IServiceProvider serviceProvider)
+```
+
+**Parameters:**
+- `serviceProvider` (IServiceProvider): The service provider
+
+**Remarks:**
+Called automatically by `AddNavigationAware()`. ViewModels will be resolved from the service provider if registered.
+
+##### Register&lt;TView, TViewModel&gt;
+
+Registers a ViewModel type for a specific View type.
+
+```csharp
+public static void Register<TView, TViewModel>() where TView : BindableObject
+```
+
+**Type Parameters:**
+- `TView`: The View type
+- `TViewModel`: The ViewModel type
+
+**Example:**
+```csharp
+ViewModelLocationProvider.Register<MainPage, MainPageViewModel>();
+```
+
+##### Register(Type, Type)
+
+Registers a ViewModel type for a specific View type (non-generic version).
+
+```csharp
+public static void Register(Type viewType, Type viewModelType)
+```
+
+**Parameters:**
+- `viewType` (Type): The View type. Must inherit from BindableObject.
+- `viewModelType` (Type): The ViewModel type
+
+**Exceptions:**
+- ArgumentException: Thrown when viewType does not inherit from BindableObject
+
+##### Register&lt;TView&gt;(Func&lt;object&gt;)
+
+Registers a factory method for creating ViewModels for a specific View type.
+
+```csharp
+public static void Register<TView>(Func<object> factory) where TView : BindableObject
+```
+
+**Type Parameters:**
+- `TView`: The View type
+
+**Parameters:**
+- `factory` (Func&lt;object&gt;): Factory method to create the ViewModel
+
+**Example:**
+```csharp
+ViewModelLocationProvider.Register<DetailsPage>(() => 
+    new DetailsPageViewModel(serviceLocator.Get<IDataService>()));
+```
+
+##### AutoWireViewModel
+
+Automatically wires up the ViewModel for a View.
+
+```csharp
+public static void AutoWireViewModel(BindableObject view, Type? viewModelType = null)
+```
+
+**Parameters:**
+- `view` (BindableObject): The view to wire up
+- `viewModelType` (Type, optional): Optional specific ViewModel type to use
+
+**Remarks:**
+Resolves the ViewModel using the following order:
+1. Registered factory (if exists)
+2. Explicitly registered ViewModel type
+3. Convention-based resolution using DefaultViewTypeToViewModelTypeResolver
+4. Service provider resolution
+5. Activator.CreateInstance
+
+**Example:**
+```csharp
+ViewModelLocationProvider.AutoWireViewModel(this);
+// or
+ViewModelLocationProvider.AutoWireViewModel(this, typeof(CustomViewModel));
+```
+
+##### Clear
+
+Clears all registered ViewModels and factories.
+
+```csharp
+public static void Clear()
+```
+
+**Remarks:**
+This is mainly useful for testing scenarios.
+
+---
+
 ## Extension Methods
 
 ### NavigationExtensions
@@ -540,6 +799,8 @@ public static class NavigationExtensions
 {
     public static IServiceCollection AddNavigationAware(this IServiceCollection services);
     public static IServiceCollection RegisterPage<TPage>(this IServiceCollection services, string? key = null) where TPage : Page;
+    public static IServiceCollection RegisterViewModel<TView, TViewModel>(this IServiceCollection services) where TView : BindableObject;
+    public static IServiceCollection RegisterViewModel<TView>(this IServiceCollection services, Func<IServiceProvider, object> factory) where TView : BindableObject;
     public static INavigationService GetNavigationService(this Page page);
 }
 ```
@@ -603,6 +864,80 @@ public static MauiApp CreateMauiApp()
     
     // Register with custom key
     builder.Services.RegisterPage<DetailsPage>("ProductDetails");
+    
+    return builder.Build();
+}
+```
+
+##### RegisterViewModel&lt;TView, TViewModel&gt;
+
+Registers a ViewModel for a specific View type.
+
+```csharp
+public static IServiceCollection RegisterViewModel<TView, TViewModel>(this IServiceCollection services) 
+    where TView : BindableObject
+```
+
+**Type Parameters:**
+- `TView`: The View type
+- `TViewModel`: The ViewModel type
+
+**Parameters:**
+- `services` (IServiceCollection): The service collection
+
+**Returns:**
+The service collection for chaining.
+
+**Example:**
+```csharp
+public static MauiApp CreateMauiApp()
+{
+    var builder = MauiApp.CreateBuilder();
+    
+    // Register pages and ViewModels
+    builder.Services.AddTransient<MainPage>();
+    builder.Services.AddTransient<MainPageViewModel>();
+    
+    // Register ViewModel mapping
+    builder.Services.RegisterViewModel<MainPage, MainPageViewModel>();
+    
+    return builder.Build();
+}
+```
+
+##### RegisterViewModel&lt;TView&gt;(Func)
+
+Registers a ViewModel for a specific View type using a factory method.
+
+```csharp
+public static IServiceCollection RegisterViewModel<TView>(
+    this IServiceCollection services, 
+    Func<IServiceProvider, object> factory) 
+    where TView : BindableObject
+```
+
+**Type Parameters:**
+- `TView`: The View type
+
+**Parameters:**
+- `services` (IServiceCollection): The service collection
+- `factory` (Func&lt;IServiceProvider, object&gt;): Factory method to create the ViewModel
+
+**Returns:**
+The service collection for chaining.
+
+**Example:**
+```csharp
+public static MauiApp CreateMauiApp()
+{
+    var builder = MauiApp.CreateBuilder();
+    
+    // Register ViewModel with dependencies
+    builder.Services.RegisterViewModel<DetailsPage>(sp => 
+        new DetailsPageViewModel(
+            sp.GetRequiredService<IDataService>(),
+            sp.GetRequiredService<INavigationService>()
+        ));
     
     return builder.Build();
 }

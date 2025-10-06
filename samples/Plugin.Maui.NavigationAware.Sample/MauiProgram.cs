@@ -16,8 +16,12 @@ public static class MauiProgram
 				fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
 			});
 
+		// Register pages
 		builder.Services.AddTransient<MainPage>();
-		builder.Services.AddSingleton<IFeature>(Feature.Default);
+		builder.Services.AddTransient<SecondPage>();
+		
+		// Register navigation service (optional - can also use extension method)
+		// builder.Services.AddNavigationAware();
 
 		return builder.Build();
 	}

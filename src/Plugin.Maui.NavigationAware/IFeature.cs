@@ -1,9 +1,9 @@
 ﻿namespace Plugin.Maui.NavigationAware;
 
 /// <summary>
-/// TODO: Provide relevant comments for your APIs
+/// Legacy interface - use INavigationAware instead
 /// </summary>
+[Obsolete("This interface is deprecated. Use INavigationAware and related interfaces instead.")]
 public interface IFeature
 {
-	// TODO Define your plugin interface
 }

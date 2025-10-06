@@ -1,10 +1,10 @@
-﻿using Plugin.Maui.NavigationAware;
+using Plugin.Maui.NavigationAware;
 
 namespace Plugin.Maui.NavigationAware.Sample;
 
-public partial class MainPage : NavigationAwarePage
+public partial class SecondPage : NavigationAwarePage
 {
-	public MainPage()
+	public SecondPage()
 	{
 		InitializeComponent();
 	}
@@ -13,12 +13,17 @@ public partial class MainPage : NavigationAwarePage
 	{
 		base.OnNavigatedTo(parameters);
 		// Handle incoming navigation
-		StatusLabel.Text = "MainPage: Navigated To";
+		StatusLabel.Text = "SecondPage: Navigated To";
 		
 		// Access parameters if provided
 		if (parameters.TryGetValue<string>("message", out var message))
 		{
 			StatusLabel.Text += $"\nReceived: {message}";
+		}
+		
+		if (parameters.TryGetValue<DateTime>("timestamp", out var timestamp))
+		{
+			StatusLabel.Text += $"\nTimestamp: {timestamp:HH:mm:ss}";
 		}
 	}
 
@@ -26,19 +31,17 @@ public partial class MainPage : NavigationAwarePage
 	{
 		base.OnNavigatedFrom(parameters);
 		// Handle outgoing navigation
-		StatusLabel.Text = "MainPage: Navigated From";
+		StatusLabel.Text = "SecondPage: Navigated From";
 	}
 
-	private async void OnNavigateClicked(object sender, EventArgs e)
+	private async void OnGoBackClicked(object sender, EventArgs e)
 	{
 		var navigationService = this.GetNavigationService();
 		var parameters = new NavigationParameters
 		{
-			{ "message", "Hello from MainPage!" },
-			{ "timestamp", DateTime.Now }
+			{ "message", "Returning from SecondPage" }
 		};
 		
-		await navigationService.NavigateToAsync(new SecondPage(), parameters);
+		await navigationService.GoBackAsync(parameters);
 	}
 }
-
